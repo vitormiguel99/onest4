@@ -1,39 +1,56 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 
-st.title("📈 Interactive Data Dashboard")
+st.title("📊 Dashboard with Multiple Datasets")
 
-# 📁 CSV Upload
-uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
-if uploaded_file:
-    df = pd.read_csv(uploaded_file)
-    st.subheader("🔍 Uploaded Data Preview")
-    st.dataframe(df.head())
-else:
-    # Generate sample data
-    st.subheader("🧪 Sample Generated Data")
-    df = pd.DataFrame({
-        "Date": pd.date_range(start="2025-01-01", periods=30),
-        "Value": np.random.normal(loc=100, scale=10, size=30)
-    })
+# 📁 Load both datasets (replace with GitHub raw URLs if needed)
+action_url = "https://github.com/vitormiguel99/onest4/blob/main/TheDashboard/action.csv"
+session_url = "https://github.com/vitormiguel99/onest4/blob/main/TheDashboard/session.csv"
 
-# 📊 Filter Slider in Sidebar
-st.sidebar.header("Filters")
-min_val = int(df["Value"].min())
-max_val = int(df["Value"].max())
-selected_range = st.sidebar.slider("Select Value Range", min_val, max_val, (min_val, max_val))
+# Load data
+try:
+    action_df = pd.read_csv(action_url)
+    session_df = pd.read_csv(session_url)
+    st.success("✅ Both datasets loaded successfully!")
+except Exception as e:
+    st.error(f"Error loading data: {e}")
+    st.stop()
 
-# Filter the dataframe
-filtered_df = df[(df["Value"] >= selected_range[0]) & (df["Value"] <= selected_range[1])]
+# 🔍 Show previews
+st.subheader("📄 Action Data")
+st.dataframe(action_df.head())
 
-# 📈 Plotting
-st.subheader("📉 Line Chart (Filtered Data)")
-fig, ax = plt.subplots()
-ax.plot(filtered_df["Date"], filtered_df["Value"], marker="o", linestyle="-")
-ax.set_xlabel("Date")
-ax.set_ylabel("Value")
-ax.set_title("Filtered Time Series")
-plt.xticks(rotation=45)
-st.pyplot(fig)
+st.subheader("📄 Session Data")
+st.dataframe(session_df.head())
+
+# 🎯 Assume both have a 'date' column and a numeric metric column
+# You can adjust this based on your real column names
+
+# Line chart for Action data
+st.subheader("📈 Action Chart")
+try:
+    fig1, ax1 = plt.subplots()
+    action_df['date'] = pd.to_datetime(action_df['date'])  # Adjust column name if needed
+    ax1.plot(action_df['date'], action_df.iloc[:, 1], marker='o')  # assumes value is in 2nd column
+    ax1.set_title("Action Over Time")
+    ax1.set_xlabel("Date")
+    ax1.set_ylabel(action_df.columns[1])
+    plt.xticks(rotation=45)
+    st.pyplot(fig1)
+except Exception as e:
+    st.warning(f"Could not plot action.csv: {e}")
+
+# Line chart for Session data
+st.subheader("📈 Session Chart")
+try:
+    fig2, ax2 = plt.subplots()
+    session_df['date'] = pd.to_datetime(session_df['date'])  # Adjust column name if needed
+    ax2.plot(session_df['date'], session_df.iloc[:, 1], marker='o')
+    ax2.set_title("Session Over Time")
+    ax2.set_xlabel("Date")
+    ax2.set_ylabel(session_df.columns[1])
+    plt.xticks(rotation=45)
+    st.pyplot(fig2)
+except Exception as e:
+    st.warning(f"Could not plot session.csv: {e}")
