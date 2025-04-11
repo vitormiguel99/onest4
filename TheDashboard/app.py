@@ -8,7 +8,7 @@ import seaborn as sns
 st.title("🧠 Clustering Analysis - HR Data")
 
 # Load data
-url = "https://raw.githubusercontent.com/onest4/TheDashboard/main/data/hr_training.csv"
+url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/hr_training.csv?token=GHSAT0AAAAAADCCBYDED5P7FLHSBLBAMCO2Z7ZDPNA"
 df = pd.read_csv(url, sep=";")
 
 # Preprocess
