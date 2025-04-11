@@ -9,7 +9,6 @@ st.title("🧠 Clustering Analysis - HR Data")
 
 # Load data
 url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/hr_training.csv?token=GHSAT0AAAAAADCCBYDED5P7FLHSBLBAMCO2Z7ZDPNA"
-df = pd.read_csv(url, sep=";")
 
 # Preprocess
 for col in ['satisfaction_level', 'last_evaluation']:
