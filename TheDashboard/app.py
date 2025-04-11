@@ -1,56 +1,43 @@
 import streamlit as st
 import pandas as pd
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
+import seaborn as sns
 
-st.title("📊 Dashboard with Multiple Datasets")
-
-# 📁 Load both datasets (replace with GitHub raw URLs if needed)
-action_url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/action.csv?token=GHSAT0AAAAAADCCBYDFCGI7SS5YGE4MJJBIZ7ZDJYQ"
-session_url = "http://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/session.csv?token=GHSAT0AAAAAADCCBYDFV7UAHKOYJH6GWAKCZ7ZDJZQ"
+st.title("🧠 Clustering Analysis - HR Data")
 
 # Load data
-try:
-    action_df = pd.read_csv(action_url)
-    session_df = pd.read_csv(session_url)
-    st.success("✅ Both datasets loaded successfully!")
-except Exception as e:
-    st.error(f"Error loading data: {e}")
-    st.stop()
+url = "https://raw.githubusercontent.com/onest4/TheDashboard/main/data/hr_training.csv"
+df = pd.read_csv(url, sep=";")
 
-# 🔍 Show previews
-st.subheader("📄 Action Data")
-st.dataframe(action_df.head())
+# Preprocess
+for col in ['satisfaction_level', 'last_evaluation']:
+    df[col] = df[col].str.replace(',', '.').astype(float)
 
-st.subheader("📄 Session Data")
-st.dataframe(session_df.head())
+numeric_cols = ['number_project', 'average_montly_hours', 'time_spend_company', 'work_accident', 'promotion_last_5years', 'left']
+df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric)
 
-# 🎯 Assume both have a 'date' column and a numeric metric column
-# You can adjust this based on your real column names
+df_encoded = pd.get_dummies(df, columns=["job", "salary"], drop_first=True)
 
-# Line chart for Action data
-st.subheader("📈 Action Chart")
-try:
-    fig1, ax1 = plt.subplots()
-    action_df['date'] = pd.to_datetime(action_df['date'])  # Adjust column name if needed
-    ax1.plot(action_df['date'], action_df.iloc[:, 1], marker='o')  # assumes value is in 2nd column
-    ax1.set_title("Action Over Time")
-    ax1.set_xlabel("Date")
-    ax1.set_ylabel(action_df.columns[1])
-    plt.xticks(rotation=45)
-    st.pyplot(fig1)
-except Exception as e:
-    st.warning(f"Could not plot action.csv: {e}")
+# Cluster function
+def run_kmeans(df_subset, cluster_label, n_clusters=3):
+    df_cluster = df_subset.drop(columns=["id_colab", "left"], errors="ignore")
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(df_cluster)
+    kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init='auto')
+    kmeans.fit(X_scaled)
+    df_result = df_subset.copy()
+    df_result[f"cluster_{cluster_label}"] = kmeans.labels_
+    return df_result
 
-# Line chart for Session data
-st.subheader("📈 Session Chart")
-try:
-    fig2, ax2 = plt.subplots()
-    session_df['date'] = pd.to_datetime(session_df['date'])  # Adjust column name if needed
-    ax2.plot(session_df['date'], session_df.iloc[:, 1], marker='o')
-    ax2.set_title("Session Over Time")
-    ax2.set_xlabel("Date")
-    ax2.set_ylabel(session_df.columns[1])
-    plt.xticks(rotation=45)
-    st.pyplot(fig2)
-except Exception as e:
-    st.warning(f"Could not plot session.csv: {e}")
+# Run clustering
+df_all_clusters = run_kmeans(df_encoded, "all")
+
+# Show cluster counts
+st.subheader("🔢 Cluster Distribution (All Employees)")
+st.bar_chart(df_all_clusters["cluster_all"].value_counts())
+
+# Optional: Preview the result
+st.subheader("📄 Sample Clustered Data")
+st.dataframe(df_all_clusters.head())
