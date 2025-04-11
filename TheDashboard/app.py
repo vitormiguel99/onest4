@@ -30,7 +30,7 @@ with tabs[2]:
     st.header("🧠 Clustering Analysis")
 
     # Load data
-    csv_url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/hr_training.csv?token=GHSAT0AAAAAADCCBYDEIA5X7QX7ATT7BDPIZ7ZDUHA"
+    csv_url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/hr_training.csv?token=GHSAT0AAAAAADCCBYDEERMHAPCT73FJW3SMZ7ZEC5A"
     df = pd.read_csv(csv_url)
 
     # Preprocessing
