@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 st.title("📊 Dashboard with Multiple Datasets")
 
 # 📁 Load both datasets (replace with GitHub raw URLs if needed)
-action_url = "https://github.com/vitormiguel99/onest4/blob/main/TheDashboard/action.csv"
-session_url = "https://github.com/vitormiguel99/onest4/blob/main/TheDashboard/session.csv"
+action_url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/action.csv?token=GHSAT0AAAAAADCCBYDFCGI7SS5YGE4MJJBIZ7ZDJYQ"
+session_url = "http://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/session.csv?token=GHSAT0AAAAAADCCBYDFV7UAHKOYJH6GWAKCZ7ZDJZQ"
 
 # Load data
 try:
