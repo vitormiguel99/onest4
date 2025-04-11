@@ -8,7 +8,7 @@ st.set_page_config(page_title="HR Clustering Dashboard", layout="wide")
 st.title("🧠 HR Clustering Dashboard")
 
 # ✅ 1. Load the CSV from GitHub
-csv_url = "https://raw.githubusercontent.com/onest4/TheDashboard/main/data/hr_training_new.csv"  # update if needed
+csv_url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/hr_training.csv?token=GHSAT0AAAAAADCCBYDEIA5X7QX7ATT7BDPIZ7ZDUHA"  # update if needed
 df = pd.read_csv(csv_url)  # assuming comma-separated now
 
 # ✅ 2. Preprocessing
