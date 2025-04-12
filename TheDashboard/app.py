@@ -9,8 +9,8 @@ st.set_page_config(page_title="Mg&DS Dashboard", layout="wide")
 st.title("🧠 Website Activity Analysis")
 
 # Load the datasets (replace with your raw GitHub URLs)
-actions_url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/cleaned_action.csv?token=GHSAT0AAAAAADCCBYDEVO3MFWNCWQBUNV5QZ72VNOA"
-clicks_url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/cleaned_click_session.csv?token=GHSAT0AAAAAADCCBYDFAF5SX6D337WLJBM6Z72VNLQ"
+actions_url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/cleaned_action.csv"
+clicks_url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/cleaned_click_session.csv"
 
 actions_df = pd.read_csv(actions_url)
 click_sessions_df = pd.read_csv(clicks_url)
