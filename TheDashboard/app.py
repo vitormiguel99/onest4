@@ -105,10 +105,10 @@ actions_per_session = actions_df.groupby('action_session_id').size()
 st.write(f"**Avg**: {actions_per_session.mean():.2f} | **Max**: {actions_per_session.max()} | **Min**: {actions_per_session.min()}")
 
 # -------------------- Q6: Actions per Type ---------------------
-if "action_type" in actions_df.columns:
+if "action_name" in actions_df.columns:
     st.subheader("6. Actions per Type")
-    type_counts = actions_df.groupby('action_type').size().reset_index(name='count')
-    fig_type = px.bar(type_counts, x='action_type', y='count', title="Actions per Type")
+    type_counts = actions_df.groupby('action_name').size().reset_index(name='count')
+    fig_type = px.bar(type_counts, x='action_name', y='count', title="Actions per Type")
     st.plotly_chart(fig_type, use_container_width=True)
 
     # ---------------- Q7: Actions per Type per Session ----------------
@@ -117,7 +117,7 @@ if "action_type" in actions_df.columns:
     stats = type_session.groupby('action_name')['count'].agg(['mean', 'max', 'min']).reset_index()
     st.dataframe(stats)
 else:
-    st.warning("⚠️ 'action_type' column not found in actions dataset.")
+    st.warning("⚠️ 'action_name' column not found in actions dataset.")
 
 
 # 🧠 Clustering
