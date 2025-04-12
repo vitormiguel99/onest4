@@ -113,8 +113,8 @@ if "action_type" in actions_df.columns:
 
     # ---------------- Q7: Actions per Type per Session ----------------
     st.subheader("7. Actions per Type per Session")
-    type_session = actions_df.groupby(['action_session_id', 'action_type']).size().reset_index(name='count')
-    stats = type_session.groupby('action_type')['count'].agg(['mean', 'max', 'min']).reset_index()
+    type_session = actions_df.groupby(['action_session_id', 'action_name']).size().reset_index(name='count')
+    stats = type_session.groupby('action_name')['count'].agg(['mean', 'max', 'min']).reset_index()
     st.dataframe(stats)
 else:
     st.warning("⚠️ 'action_type' column not found in actions dataset.")
