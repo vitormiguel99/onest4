@@ -39,6 +39,11 @@ clicks_url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/
 actions_df = pd.read_csv(actions_url)
 click_sessions_df = pd.read_csv(clicks_url)
 
+# Cast yyyymmdd columns as timestamps
+actions_df['action_yyyymmdd'] = pd.to_datetime(actions_df['action_yyyymmdd'].astype(str), format='%Y%m%d')
+click_sessions_df['click_yyyymmdd'] = pd.to_datetime(click_sessions_df['click_yyyymmdd'].astype(str), format='%Y%m%d')
+click_sessions_df['session_yyyymmdd'] = pd.to_datetime(click_sessions_df['session_yyyymmdd'].astype(str), format='%Y%m%d')
+
 st.header("📊 Usage & Interaction Analysis")
 
 # -------------------- Q1: Distribution Over Time ---------------------
