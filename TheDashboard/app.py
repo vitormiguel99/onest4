@@ -33,8 +33,8 @@ import pandas as pd
 import plotly.express as px
 
 # Load the datasets (replace with your raw GitHub URLs)
-actions_url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/cleaned_action.csv?token=GHSAT0AAAAAADCCBYDF3OUGCSA6ZM57AYZCZ72U46A"
-clicks_url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/cleaned_click_session.csv?token=GHSAT0AAAAAADCCBYDFHHIJPXWA3232PW2SZ72U5DQ"
+actions_url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/cleaned_action.csv?token=GHSAT0AAAAAADCCBYDFZMYPYKQKWDEVXYEMZ72VGVQ"
+clicks_url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/cleaned_click_session.csv?token=GHSAT0AAAAAADCCBYDF4GJ56WQ5CREAUUTWZ72VGWA"
 
 actions_df = pd.read_csv(actions_url)
 click_sessions_df = pd.read_csv(clicks_url)
