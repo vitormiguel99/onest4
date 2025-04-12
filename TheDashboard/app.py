@@ -3,9 +3,25 @@ import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
+import plotly.express as px
 
 st.set_page_config(page_title="Mg&DS Dashboard", layout="wide")
 st.title("🧠 Website Activity Analysis")
+
+# Load the datasets (replace with your raw GitHub URLs)
+actions_url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/cleaned_action.csv?token=GHSAT0AAAAAADCCBYDFZMYPYKQKWDEVXYEMZ72VGVQ"
+clicks_url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/cleaned_click_session.csv?token=GHSAT0AAAAAADCCBYDF4GJ56WQ5CREAUUTWZ72VGWA"
+
+actions_df = pd.read_csv(actions_url)
+click_sessions_df = pd.read_csv(clicks_url)
+
+# Cast yyyymmdd columns as timestamps (handle invalid entries gracefully)
+def safe_to_datetime(series):
+    return pd.to_datetime(series.astype(str), format='%Y%m%d', errors='coerce')
+
+actions_df['action_yyyymmdd'] = safe_to_datetime(actions_df['action_yyyymmdd'])
+click_sessions_df['click_yyyymmdd'] = safe_to_datetime(click_sessions_df['click_yyyymmdd'])
+click_sessions_df['session_yyyymmdd'] = safe_to_datetime(click_sessions_df['session_yyyymmdd'])
 
 # Tabs
 tabs = st.tabs(["🏠 Home", "📈 Overview", "📊 Classification", "🧠 Clustering"])
@@ -27,25 +43,6 @@ with tabs[0]:
 with tabs[1]:
     st.header("📈 Overview")
     st.info("This section will show data summary and distributions. (Coming soon)")
-
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-
-# Load the datasets (replace with your raw GitHub URLs)
-actions_url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/cleaned_action.csv?token=GHSAT0AAAAAADCCBYDFZMYPYKQKWDEVXYEMZ72VGVQ"
-clicks_url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/cleaned_click_session.csv?token=GHSAT0AAAAAADCCBYDF4GJ56WQ5CREAUUTWZ72VGWA"
-
-actions_df = pd.read_csv(actions_url)
-click_sessions_df = pd.read_csv(clicks_url)
-
-# Cast yyyymmdd columns as timestamps (handle invalid entries gracefully)
-def safe_to_datetime(series):
-    return pd.to_datetime(series.astype(str), format='%Y%m%d', errors='coerce')
-
-actions_df['action_yyyymmdd'] = safe_to_datetime(actions_df['action_yyyymmdd'])
-click_sessions_df['click_yyyymmdd'] = safe_to_datetime(click_sessions_df['click_yyyymmdd'])
-click_sessions_df['session_yyyymmdd'] = safe_to_datetime(click_sessions_df['session_yyyymmdd'])
 
 st.header("📊 Usage & Interaction Analysis")
 
