@@ -39,10 +39,13 @@ clicks_url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/
 actions_df = pd.read_csv(actions_url)
 click_sessions_df = pd.read_csv(clicks_url)
 
-# Cast yyyymmdd columns as timestamps
-actions_df['action_yyyymmdd'] = pd.to_datetime(actions_df['action_yyyymmdd'].astype(str), format='%Y%m%d')
-click_sessions_df['click_yyyymmdd'] = pd.to_datetime(click_sessions_df['click_yyyymmdd'].astype(str), format='%Y%m%d')
-click_sessions_df['session_yyyymmdd'] = pd.to_datetime(click_sessions_df['session_yyyymmdd'].astype(str), format='%Y%m%d')
+# Cast yyyymmdd columns as timestamps (handle invalid entries gracefully)
+def safe_to_datetime(series):
+    return pd.to_datetime(series.astype(str), format='%Y%m%d', errors='coerce')
+
+actions_df['action_yyyymmdd'] = safe_to_datetime(actions_df['action_yyyymmdd'])
+click_sessions_df['click_yyyymmdd'] = safe_to_datetime(click_sessions_df['click_yyyymmdd'])
+click_sessions_df['session_yyyymmdd'] = safe_to_datetime(click_sessions_df['session_yyyymmdd'])
 
 st.header("📊 Usage & Interaction Analysis")
 
