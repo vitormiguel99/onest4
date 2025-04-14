@@ -111,7 +111,7 @@ with tabs[1]:
         st.warning("⚠️ 'action_name' column not found in actions dataset.")
 
 # 🫱🏻‍🫲🏼Engagement
-with tabs[2] :
+with tabs[2]:
     st.header("🫱🏻‍🫲🏼Engagement Analysis")
 
     # SCORE D'ENGAGEMENT = Prend en compte les action(calssées par importance) et le parmaétre de régularité de l'utilisateur
