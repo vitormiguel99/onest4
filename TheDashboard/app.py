@@ -118,7 +118,7 @@ with tabs[2]:
     st.subheader("1. Engagement Score: Takes into account the user's actions (ranked by importance) and regularity parameter")
     
     # 🧽 Préparation
-    actions_df["action_timestamp"] = pd.to_datetime(df["action_timestamp"], unit="s", errors="coerce")
+    actions_df["action_timestamp"] = pd.to_datetime(actions_df["action_timestamp"], unit="s", errors="coerce")
 
     # Pondération des groupes d’actions
     poids_action_group = {
