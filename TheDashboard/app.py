@@ -113,32 +113,9 @@ with tabs[1]:
 # 🫱🏻‍🫲🏼Engagement
 with tabs[2]:
     st.header("🫱🏻‍🫲🏼Engagement Analysis")
-
-    #Q1 Single metrics 
-    # 🔢 Taux de rebond
-    st.subheader("2. Bounce Rate and Return Rate")
-    total_sessions = click_sessions_df["click_session_id"].nunique()
-    total_bounces = click_sessions_df[click_sessions_df["session_is_bounce"] == 1]["click_session_id"].nunique()
-    taux_de_rebond = (total_bounces / total_sessions) * 100
-    # 🔁 Taux de retour
-    nb_total_utilisateurs = click_sessions_df["click_visitor_id"].nunique()
-    sessions_par_utilisateur = click_sessions_df.groupby("click_visitor_id")["click_session_id"].nunique().reset_index()
-    utilisateurs_revenus = sessions_par_utilisateur[sessions_par_utilisateur["click_session_id"] > 1].shape[0]
-    taux_de_retour = (utilisateurs_revenus / nb_total_utilisateurs) * 100
-
-    col4, col5 = st.columns(2)
-    with col4:
-        st.metric("Taux de rebond", f"{taux_de_rebond:.2f} %")
-    with col5:
-        st.metric("Taux de retour", f"{taux_de_retour:.2f} %")
-    # 📄 Moyenne de pages vues par session
-    st.subheader("3. Moyenne de pages vues par session")
-    pages_par_session = click_sessions_df.groupby("click_session_id")["click_num_pageviews"].max().reset_index(name="session_num_pageviews")
-    moyenne_pages = pages_par_session["session_num_pageviews"].mean()
-    st.metric("Pages vues/session", f"{moyenne_pages:.2f}")
     
-    # Q2. SCORE D'ENGAGEMENT = Prend en compte les action(calssées par importance) et le parmaétre de régularité de l'utilisateur
-    st.subheader("2. Engagement Score: Takes into account the user's actions (ranked by importance) and regularity parameter")
+    # Q1. SCORE D'ENGAGEMENT = Prend en compte les action(calssées par importance) et le parmaétre de régularité de l'utilisateur
+    st.subheader("1. Engagement Score: Takes into account the user's actions (ranked by importance) and regularity parameter")
     
     # 🧽 Préparation
     actions_df["action_timestamp"] = pd.to_datetime(actions_df["action_timestamp"], unit="s", errors="coerce")
@@ -187,6 +164,12 @@ with tabs[2]:
     else:
         st.dataframe(result.head(10))
 
+    #Q2. Analysis of Rebound
+    nb_total_utilisateurs = click_sessions_df["click_visitor_id"].nunique()
+    sessions_par_utilisateur = click_sessions_df.groupby("click_visitor_id")["click_session_id"].nunique().reset_index()
+    utilisateurs_revenus = sessions_par_utilisateur[sessions_par_utilisateur["click_session_id"] > 1].shape[0]
+    taux_de_retour = (utilisateurs_revenus / nb_total_utilisateurs) * 100
+    st.metric("Taux de rebond", f"{taux_de_rebond:.2f} %")
 # 📊 Classification
 with tabs[3]:
     st.header("📊 Classification")
