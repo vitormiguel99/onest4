@@ -230,7 +230,7 @@ with tabs[2]:
         filtered_session = pages_per_session[pages_per_session["session_visitor_id"].astype(str).str.contains(session_filter)]
         st.dataframe(session_filter)
     else:
-        st.dataframe(results_per_session.head(10))
+        st.dataframe(pages_per_session.head(10))
 
     
     
