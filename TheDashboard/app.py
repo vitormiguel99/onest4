@@ -157,7 +157,7 @@ with tabs[2]:
     result_engage = user_scores[["action_visitor_id", "score_engagement"]].sort_values(by="score_engagement", ascending=False).round(2)
 
     # 🔍 Search box
-    visitor_filter_engage = st.text_input("Search for a specific Visitor ID's enagagement")
+    visitor_filter_engage = st.text_input("Search for a specific Visitor ID to see their enagagement")
     if visitor_filter_engage:
         filtered_result_engage = result_engage[result_engage["action_visitor_id"].astype(str).str.contains(visitor_filter_engage)]
         st.dataframe(filtered_result_engage)
@@ -187,7 +187,7 @@ with tabs[2]:
     # Afficher les 10 premiers résultats triés
     result_bounce = bounce_stats.sort_values(by="taux_rebond_utilisateur", ascending=False).head(10)
     # 🔍 Search box
-    visitor_filter_bounce = st.text_input("Search for a specific Visitor ID's bounce rate")
+    visitor_filter_bounce = st.text_input("Search for a specific Visitor ID to see their bounce rate")
     if visitor_filter_bounce:
         filtered_result_bounce = result_bounce[result_bounce["session_visitor_id"].astype(str).str.contains(visitor_filter_bounce)]
         st.dataframe(filtered_result_bounce)
@@ -211,12 +211,28 @@ with tabs[2]:
     lambda x: 1 if x > 1 else 0)
 
     # Affichage
-    visitor_filter_return = st.text_input("Search for a specific Visitor ID's returns rate")
+    visitor_filter_return = st.text_input("Search for a specific Visitor ID to see their return rate")
     if visitor_filter_return:
         filtered_result_return = result_return[result_return["session_visitor_id"].astype(str).str.contains(visitor_filter_return)]
         st.dataframe(filtered_result_return)
     else:
         st.dataframe(result_return.head(10))
+
+    #Q4. Analysis of views per session
+    st.subheader("3. Analysis of Views per Session")
+    # Extraire les colonnes utiles
+    pages_per_session = click_session_df[["session_id", "session_num_pageviews"]].drop_duplicates()
+    moyenne_pages = pages_per_session["session_num_pageviews"].mean()
+    st.write(f"Average of pages view per session : {moyenne_pages:.2f}")
+
+    session_filter = st.text_input("Search for a specific Session ID to see its Nb of Pages Visited")
+    if session_filter:
+        filtered_session = pages_per_session[pages_per_session["session_visitor_id"].astype(str).str.contains(session_filter)]
+        st.dataframe(session_filter)
+    else:
+        st.dataframe(results_per_session.head(10))
+
+    
     
 # 📊 Classification
 with tabs[3]:
