@@ -128,10 +128,10 @@ with tabs[2]:
         'reaction': 2,
         'user': 1
     }
-    df["action_group_weight"] = df["action_group"].map(poids_action_group)
+    actions_df["action_group_weight"] = actions_df["action_group"].map(poids_action_group)
     
     # Supprimer les lignes sans poids
-    df_clean = df.dropna(subset=["action_group_weight"])
+    df_clean = actions_df.dropna(subset=["action_group_weight"])
     
     # Calcul du score brut
     user_scores = df_clean.groupby("action_visitor_id").agg(
