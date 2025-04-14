@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
@@ -24,7 +25,7 @@ click_sessions_df['click_yyyymmdd'] = safe_to_datetime(click_sessions_df['click_
 click_sessions_df['session_yyyymmdd'] = safe_to_datetime(click_sessions_df['session_yyyymmdd'])
 
 # Tabs
-tabs = st.tabs(["🏠 Home", "📈 Overview", "📊 Classification", "🧠 Clustering"])
+tabs = st.tabs(["🏠 Home", "📈 Overview", "🫱🏻‍🫲🏼Engagement", "📊 Classification", "🧠 Clustering"])
 
 # 🏠 Home
 with tabs[0]:
@@ -38,6 +39,54 @@ with tabs[0]:
 
         Use the tabs above to navigate through the analysis.
     """)
+# 🫱🏻‍🫲🏼Engagement
+with tabs[2] :
+    st.header("🫱🏻‍🫲🏼Engagement Analysis")
+
+    # SCORE D'ENGAGEMENT = Prend en compte les action(calssées par importance) et le parmaétre de régularité de l'utilisateur
+    st.subheader("1. Engagement Score: Takes into account the user's actions (ranked by importance) and regularity parameter")
+    
+    # 🧽 Préparation
+    actions_df["action_timestamp"] = pd.to_datetime(df["action_timestamp"], unit="s", errors="coerce")
+
+    # Pondération des groupes d’actions
+    poids_action_group = {
+        'publish': 5,
+        'animate': 4,
+        'participate': 3,
+        'reaction': 2,
+        'user': 1
+    }
+    df["action_group_weight"] = df["action_group"].map(poids_action_group)
+    
+    # Supprimer les lignes sans poids
+    df_clean = df.dropna(subset=["action_group_weight"])
+    
+    # Calcul du score brut
+    user_scores = df_clean.groupby("action_visitor_id").agg(
+        score_brut=("action_group_weight", "sum"),
+        frequence=("action_group_weight", "count"),
+        is_repeat_visitor=("action_is_repeat_visitor", "max")
+    ).reset_index()
+    
+    # Score pondéré par fréquence (logarithmique)
+    user_scores["score_actions"] = user_scores["score_brut"] * np.log1p(user_scores["frequence"])
+    
+    # Normalisation des actions
+    score_max = user_scores["score_actions"].max()
+    user_scores["score_action_normalise"] = user_scores["score_actions"] / score_max
+    
+    # ⚖️ Nouveau calcul du score : 80 % actions, 20 % fidélité
+    user_scores["score_engagement"] = (
+        0.8 * user_scores["score_action_normalise"] +
+        0.2 * user_scores["is_repeat_visitor"]
+    ) * 100
+    
+    # Résultat final
+    result = user_scores[["action_visitor_id", "score_engagement"]].sort_values(by="score_engagement", ascending=False)
+    
+    # Affichage
+    print(result.head(10))
 
 # 📈 Overview
 with tabs[1]:
