@@ -165,11 +165,43 @@ with tabs[2]:
         st.dataframe(result.head(10))
 
     #Q2. Analysis of Rebound
+    st.subheader("2. Analysis of Rebound")
+    total_sessions = click_sessions_df["click_session_id"].nunique()
+    total_bounces = click_sessions_df[click_sessions_df["session_is_bounce"] == 1]["click_session_id"].nunique()
+    taux_de_rebond = (total_bounces / total_sessions) * 100
+    st.metric("Taux de rebond", f"{taux_de_rebond:.2f} %")
+
+    sessions_user = click_session_df.groupby(["session_visitor_id", "session_id"]).agg(
+    is_bounce=("session_is_bounce", "max")  # 1 si c'est un rebond, sinon 0
+    ).reset_index()
+
+    # Regrouper par utilisateur pour compter les sessions et rebonds
+    bounce_stats = sessions_user.groupby("session_visitor_id").agg(
+        total_sessions=("session_id", "count"),
+        total_bounces=("is_bounce", "sum")
+    ).reset_index()
+    
+    # Calcul du taux de rebond par utilisateur
+    bounce_stats["taux_rebond_utilisateur"] = (bounce_stats["total_bounces"] / bounce_stats["total_sessions"]) * 100
+    
+    # Afficher les 10 premiers résultats triés
+    final_result = bounce_stats.sort_values(by="taux_rebond_utilisateur", ascending=False).head(10)
+    # 🔍 Search box
+    visitor_filter1 = st.text_input("Search for a specific Visitor ID")
+    if visitor_filter1:
+        filtered_result = result[result["session_visitor_id"].astype(str).str.contains(visitor_filter1)]
+        st.dataframe(filtered_result)
+    else:
+        st.dataframe(final_result.head(10))
+
+    #Q3. Analysis of return of users
+    st.subheader("3. Analysis of Returns")
     nb_total_utilisateurs = click_sessions_df["click_visitor_id"].nunique()
     sessions_par_utilisateur = click_sessions_df.groupby("click_visitor_id")["click_session_id"].nunique().reset_index()
     utilisateurs_revenus = sessions_par_utilisateur[sessions_par_utilisateur["click_session_id"] > 1].shape[0]
     taux_de_retour = (utilisateurs_revenus / nb_total_utilisateurs) * 100
-    st.metric("Taux de rebond", f"{taux_de_rebond:.2f} %")
+    st.metric("Taux de rebond", f"{taux_de_retour:.2f} %")
+    
 # 📊 Classification
 with tabs[3]:
     st.header("📊 Classification")
