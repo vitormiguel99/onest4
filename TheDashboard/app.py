@@ -201,6 +201,22 @@ with tabs[2]:
     utilisateurs_revenus = sessions_par_utilisateur[sessions_par_utilisateur["click_session_id"] > 1].shape[0]
     taux_de_retour = (utilisateurs_revenus / nb_total_utilisateurs) * 100
     st.metric("Taux de rebond", f"{taux_de_retour:.2f} %")
+
+    # Compter le nombre de sessions par utilisateur
+    result_return = click_session_df.groupby("session_visitor_id")["session_id"].nunique().reset_index()
+    result_return.columns = ["session_visitor_id", "nb_sessions"]
+
+    # Taux de retour binaire : 1 s'il est revenu, 0 sinon
+    result_return["retour_binaire"] = result_return["nb_sessions"].apply(
+    lambda x: 1 if x > 1 else 0)
+
+    # Affichage
+    visitor_filter_return = st.text_input("Search for a specific Visitor ID's bounce rate")
+    if visitor_filter_return:
+        filtered_result_return = result_return[result_return["session_visitor_id"].astype(str).str.contains(visitor_filter_return)]
+        st.dataframe(filtered_result_return)
+    else:
+        st.dataframe(result_return.head(10))
     
 # 📊 Classification
 with tabs[3]:
