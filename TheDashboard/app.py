@@ -154,15 +154,15 @@ with tabs[2]:
     ) * 100
     
     # Résultat final
-    result = user_scores[["action_visitor_id", "score_engagement"]].sort_values(by="score_engagement", ascending=False).round(2)
+    result_engage = user_scores[["action_visitor_id", "score_engagement"]].sort_values(by="score_engagement", ascending=False).round(2)
 
     # 🔍 Search box
-    visitor_filter = st.text_input("Search for a specific Visitor ID")
-    if visitor_filter:
-        filtered_result = result[result["action_visitor_id"].astype(str).str.contains(visitor_filter)]
-        st.dataframe(filtered_result)
+    visitor_filter_engage = st.text_input("Search for a specific Visitor ID's enagagement")
+    if visitor_filter_engage:
+        filtered_result_engage = result[result["action_visitor_id"].astype(str).str.contains(visitor_filter)]
+        st.dataframe(filtered_result_engage)
     else:
-        st.dataframe(result.head(10))
+        st.dataframe(result_engage.head(10))
 
     #Q2. Analysis of Rebound
     st.subheader("2. Analysis of Rebound")
@@ -185,14 +185,14 @@ with tabs[2]:
     bounce_stats["taux_rebond_utilisateur"] = (bounce_stats["total_bounces"] / bounce_stats["total_sessions"]) * 100
     
     # Afficher les 10 premiers résultats triés
-    final_result = bounce_stats.sort_values(by="taux_rebond_utilisateur", ascending=False).head(10)
+    result_bounce = bounce_stats.sort_values(by="taux_rebond_utilisateur", ascending=False).head(10)
     # 🔍 Search box
-    visitor_filter1 = st.text_input("Search for a specific Visitor ID")
-    if visitor_filter1:
-        filtered_result = result[result["session_visitor_id"].astype(str).str.contains(visitor_filter1)]
-        st.dataframe(filtered_result)
+    visitor_filter_bounce = st.text_input("Search for a specific Visitor ID's bounce rate")
+    if visitor_filter_bounce:
+        filtered_result_bounce = result[result["session_visitor_id"].astype(str).str.contains(visitor_filter1)]
+        st.dataframe(filtered_result_bounce)
     else:
-        st.dataframe(final_result.head(10))
+        st.dataframe(result_bounce.head(10))
 
     #Q3. Analysis of return of users
     st.subheader("3. Analysis of Returns")
