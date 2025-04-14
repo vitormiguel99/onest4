@@ -154,7 +154,7 @@ with tabs[2]:
     ) * 100
     
     # Résultat final
-    result = user_scores[["action_visitor_id", "score_engagement"]].sort_values(by="score_engagement", ascending=False)
+    result = user_scores[["action_visitor_id", "score_engagement"]].sort_values(by="score_engagement", ascending=False).round(2)
 
     # 🔍 Search box
     visitor_filter = st.text_input("Search for a specific Visitor ID")
