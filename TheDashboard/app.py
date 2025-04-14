@@ -159,7 +159,7 @@ with tabs[2]:
     # 🔍 Search box
     visitor_filter_engage = st.text_input("Search for a specific Visitor ID's enagagement")
     if visitor_filter_engage:
-        filtered_result_engage = result[result_engage["action_visitor_id"].astype(str).str.contains(visitor_filter)]
+        filtered_result_engage = result_engage[result_engage["action_visitor_id"].astype(str).str.contains(visitor_filter)]
         st.dataframe(filtered_result_engage)
     else:
         st.dataframe(result_engage.head(10))
@@ -189,7 +189,7 @@ with tabs[2]:
     # 🔍 Search box
     visitor_filter_bounce = st.text_input("Search for a specific Visitor ID's bounce rate")
     if visitor_filter_bounce:
-        filtered_result_bounce = result[result_bounce["session_visitor_id"].astype(str).str.contains(visitor_filter1)]
+        filtered_result_bounce = result_bounce[result_bounce["session_visitor_id"].astype(str).str.contains(visitor_filter1)]
         st.dataframe(filtered_result_bounce)
     else:
         st.dataframe(result_bounce.head(10))
