@@ -203,7 +203,7 @@ with tabs[2]:
     st.metric("Taux de rebond", f"{taux_de_retour:.2f} %")
 
     # Compter le nombre de sessions par utilisateur
-    result_return = click_session_df.groupby("session_visitor_id")["session_id"].nunique().reset_index()
+    result_return = click_sessions_df.groupby("session_visitor_id")["session_id"].nunique().reset_index()
     result_return.columns = ["session_visitor_id", "nb_sessions"]
 
     # Taux de retour binaire : 1 s'il est revenu, 0 sinon
