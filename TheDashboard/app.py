@@ -169,7 +169,7 @@ with tabs[2]:
     total_sessions = click_sessions_df["click_session_id"].nunique()
     total_bounces = click_sessions_df[click_sessions_df["session_is_bounce"] == 1]["click_session_id"].nunique()
     taux_de_rebond = (total_bounces / total_sessions) * 100
-    st.metric("Taux de rebond", f"{taux_de_rebond:.2f} %")
+    st.metric("Rebond rate", f"{taux_de_rebond:.2f} %")
 
     sessions_user = click_sessions_df.groupby(["session_visitor_id", "session_id"]).agg(
     is_bounce=("session_is_bounce", "max")  # 1 si c'est un rebond, sinon 0
@@ -200,7 +200,7 @@ with tabs[2]:
     sessions_par_utilisateur = click_sessions_df.groupby("click_visitor_id")["click_session_id"].nunique().reset_index()
     utilisateurs_revenus = sessions_par_utilisateur[sessions_par_utilisateur["click_session_id"] > 1].shape[0]
     taux_de_retour = (utilisateurs_revenus / nb_total_utilisateurs) * 100
-    st.metric("Taux de rebond", f"{taux_de_retour:.2f} %")
+    st.metric("Return Rate", f"{taux_de_retour:.2f} %")
 
     # Compter le nombre de sessions par utilisateur
     result_return = click_sessions_df.groupby("session_visitor_id")["session_id"].nunique().reset_index()
