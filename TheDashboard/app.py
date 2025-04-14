@@ -211,7 +211,7 @@ with tabs[2]:
     lambda x: 1 if x > 1 else 0)
 
     # Affichage
-    visitor_filter_return = st.text_input("Search for a specific Visitor ID's bounce rate")
+    visitor_filter_return = st.text_input("Search for a specific Visitor ID's returns rate")
     if visitor_filter_return:
         filtered_result_return = result_return[result_return["session_visitor_id"].astype(str).str.contains(visitor_filter_return)]
         st.dataframe(filtered_result_return)
