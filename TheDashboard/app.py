@@ -221,7 +221,7 @@ with tabs[2]:
     #Q4. Analysis of views per session
     st.subheader("4. Analysis of Views per Session")
     # Extraire les colonnes utiles
-    pages_per_session = click_session_df[["session_id", "session_num_pageviews"]].drop_duplicates()
+    pages_per_session = click_sessions_df[["session_id", "session_num_pageviews"]].drop_duplicates()
     moyenne_pages = pages_per_session["session_num_pageviews"].mean()
     st.write(f"Average of pages view per session : {moyenne_pages:.2f}")
 
