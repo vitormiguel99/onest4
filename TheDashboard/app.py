@@ -171,7 +171,7 @@ with tabs[2]:
     taux_de_rebond = (total_bounces / total_sessions) * 100
     st.metric("Taux de rebond", f"{taux_de_rebond:.2f} %")
 
-    sessions_user = click_session_df.groupby(["session_visitor_id", "session_id"]).agg(
+    sessions_user = click_sessions_df.groupby(["session_visitor_id", "session_id"]).agg(
     is_bounce=("session_is_bounce", "max")  # 1 si c'est un rebond, sinon 0
     ).reset_index()
 
