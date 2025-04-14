@@ -155,9 +155,14 @@ with tabs[2]:
     
     # Résultat final
     result = user_scores[["action_visitor_id", "score_engagement"]].sort_values(by="score_engagement", ascending=False)
-    
-    # Affichage
-    print(result.head(10))
+
+    # 🔍 Search box
+    visitor_filter = st.text_input("Search for a specific Visitor ID")
+    if visitor_filter:
+        filtered_result = result[result["action_visitor_id"].astype(str).str.contains(visitor_filter)]
+        st.dataframe(filtered_result)
+    else:
+        st.dataframe(result.head(10))
 
 # 📊 Classification
 with tabs[3]:
