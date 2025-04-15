@@ -351,8 +351,8 @@ with tabs[4]:
         if visitor_search:
             filtered_cluster_df = df_kpi[df_kpi['visitor_id'].astype(str).str.contains(visitor_search)]
             st.dataframe(filtered_cluster_df)
-    else:
-        st.dataframe(df_kpi[['visitor_id', 'cluster']].head(10))
+        else:
+            st.dataframe(df_kpi[['visitor_id', 'cluster']].head(10))
     
     with tabs[5]:
         #Analysis of actions
