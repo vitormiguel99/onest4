@@ -354,7 +354,7 @@ with tabs[4]:
         else:
             st.dataframe(df_kpi[['visitor_id', 'cluster']].head(10))
     
-    with tabs[5]:
+with tabs[5]:
         #Analysis of actions
         st.header("🧠 Actions' Clustering")
         # 1. Users' KPIs
@@ -493,7 +493,7 @@ with tabs[4]:
         else:
             st.dataframe(df_kpi_contrib[['action_visitor_id', 'cluster']].head(10))
     
-    with tabs[6]:
+with tabs[6]:
         st.header("💡Insights and Suggestions")
         # Step 1: Engagement score + personas
         st.subheader("Step 1: Cluster Personas Based on Engagement")
