@@ -492,3 +492,68 @@ with tabs[4]:
             st.dataframe(filtered_df)
         else:
             st.dataframe(df_kpi_contrib[['action_visitor_id', 'cluster']].head(10))
+
+            # Step 4: Engagement score + personas
+        st.subheader("Step 4: Cluster Personas Based on Engagement")
+    
+        action_weights = {
+            'editor publish': 5,
+            'frontend create': 4,
+            'frontend modify': 3,
+            'reaction': 2,
+            'comment': 2,
+            'frontend preview': 1,
+            'editor edit': 1,
+            'editor save': 1
+        }
+        actions_df['action_weight'] = actions_df['action_name'].map(action_weights).fillna(0)
+    
+        score_by_user = actions_df.groupby('action_visitor_id').agg(
+            action_score=('action_weight', 'sum'),
+            repeat_ratio=('action_is_repeat_visitor', lambda x: x.sum() / len(x))
+        ).reset_index()
+    
+        max_action_score = score_by_user['action_score'].max()
+        score_by_user['action_score_norm'] = score_by_user['action_score'] / max_action_score * 100
+        score_by_user['engagement_score'] = (
+            0.8 * score_by_user['action_score_norm'] + 0.2 * score_by_user['repeat_ratio'] * 100
+        )
+    
+        if 'engagement_score' in df_kpi_contrib.columns:
+            df_kpi_contrib = df_kpi_contrib.drop(columns='engagement_score')
+    
+        df_kpi_contrib = df_kpi_contrib.merge(
+            score_by_user[['action_visitor_id', 'engagement_score']],
+            on='action_visitor_id', how='left'
+        )
+    
+        cluster_score_summary = df_kpi_contrib.groupby('cluster')['engagement_score'].mean().round(2).reset_index()
+    
+        cluster_to_persona = {
+            0: "Profil dormant",
+            1: "Collaborateur régulier",
+            2: "Ambassadeur éditorial",
+            3: "Simple observateur",
+            4: "Éclaireur à convertir",
+            5: "Utilisateur métier productif"
+        }
+        cluster_score_summary['persona'] = cluster_score_summary['cluster'].map(cluster_to_persona)
+    
+        def score_to_label(score):
+            if score <= 10:
+                return 'Très faible'
+            elif score <= 20:
+                return 'Faible'
+            elif score <= 25:
+                return 'Moyen'
+            elif score <= 50:
+                return 'Élevé'
+            else:
+                return 'Très élevé'
+    
+        cluster_score_summary['engagement_level'] = cluster_score_summary['engagement_score'].apply(score_to_label)
+        cluster_score_summary = cluster_score_summary[['cluster', 'persona', 'engagement_score', 'engagement_level']]
+    
+        st.subheader("📌 Cluster Personas Summary")
+        st.dataframe(cluster_score_summary)
+    
