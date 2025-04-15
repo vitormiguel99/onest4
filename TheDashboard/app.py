@@ -311,7 +311,7 @@ with tabs[4]:
     # Step 3: Distribution
     st.subheader("Step 3: Feature Distributions After Log Transformation")
     selected_col = st.selectbox("Select a KPI to view its log distribution", options=[f'{col}_log' for col in cols_to_transform])
-    fig = plt.figure(figsize=(6, 4))
+    fig = plt.figure(figsize=(5, 4))
     sns.histplot(df_kpi[selected_col], kde=True, bins=30)
     plt.title(f"Distribution log of {selected_col.replace('_log', '')}")
     plt.xlabel(selected_col)
@@ -322,7 +322,7 @@ with tabs[4]:
 
     # Step 4: Boxplots of all features
     st.subheader("Step 4: Boxplot of Log-Transformed KPIs")
-    fig_box = plt.figure(figsize=(10, 5))
+    fig_box = plt.figure(figsize=(7, 5))
     sns.boxplot(data=df_kpi[[f'{col}_log' for col in cols_to_transform]])
     plt.xticks(rotation=45)
     plt.title("Boxplot of log-transformed navigation KPIs")
