@@ -356,7 +356,7 @@ with tabs[4]:
     
     #Analysis of actions
     st.header("🧠 Actions' Clustering")
-    #Users' KPIs
+    # 1. Users' KPIs
     st.subheader("Step 1: Actions' KPIs per Visitor")
     df_contribution_users = actions_df.groupby('action_visitor_id').agg(
     nb_actions_total=('action_id', 'count'),
@@ -391,4 +391,39 @@ with tabs[4]:
         st.dataframe(filtered)
     else:
         st.dataframe(df_contribution_users.head(10))
+
     
+        # Step 2: Contribution KPI Distributions
+    st.subheader("Step 2: Contribution KPI Distributions")
+    kpi_cols = [
+        'nb_actions_total',
+        'nb_types_actions_uniques',
+        'nb_groupes_actions',
+        'nb_jours_actifs',
+        'taux_repeat_visitor',
+        'nb_mediums_utilisés',
+        'nb_sites_utilisés',
+        'nb_contributions',
+        'nb_modifications',
+        'nb_publications'
+    ]
+
+    selected_kpi = st.selectbox("Select a Contribution KPI to view its distribution", options=kpi_cols)
+    fig_kpi_dist = plt.figure(figsize=(6, 4))
+    sns.histplot(df_contribution_users[selected_kpi], kde=True, bins=30)
+    plt.title(f"Distribution of {selected_kpi}")
+    plt.xlabel(selected_kpi)
+    plt.ylabel("Frequency")
+    plt.grid(True)
+    plt.tight_layout()
+    st.pyplot(fig_kpi_dist)
+
+    # Global boxplot for KPI contribution
+    st.subheader("Global Boxplot of Contribution KPIs")
+    fig_kpi_box = plt.figure(figsize=(12, 6))
+    sns.boxplot(data=df_contribution_users[kpi_cols])
+    plt.xticks(rotation=45)
+    plt.title("Boxplot of Contribution KPIs")
+    plt.grid(True)
+    plt.tight_layout()
+    st.pyplot(fig_kpi_box) 
