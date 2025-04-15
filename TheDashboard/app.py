@@ -393,7 +393,7 @@ with tabs[4]:
         st.dataframe(df_contribution_users.head(10))
 
     
-        # Step 2: Contribution KPI Distributions
+    # Step 2: Contribution KPI Distributions
     st.subheader("Step 2: Contribution KPI Distributions")
     kpi_cols = [
         'nb_actions_total',
