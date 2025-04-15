@@ -242,7 +242,6 @@ with tabs[3]:
     st.info("This section will display classification models and performance metrics.")
 
 # 🧠 Clustering
-# 🧠 Clustering
 with tabs[4]:
     st.header("🧠 Clustering")
     st.markdown("""
