@@ -307,6 +307,7 @@ with tabs[4]:
 
     df_scaled = pd.DataFrame(X_scaled, columns=[f'{col}_scaled' for col in cols_to_transform])
     df_scaled['visitor_id'] = df_kpi['visitor_id'].values
+    
     # Step 3: Distribution
     st.subheader("Step 3: Feature Distributions After Log Transformation")
     selected_col = st.selectbox("Select a KPI to view its log distribution", options=[f'{col}_log' for col in cols_to_transform])
@@ -329,27 +330,25 @@ with tabs[4]:
     plt.tight_layout()
     st.pyplot(fig_box)
 
-    # Step 5: KMeans Clustering
-    st.subheader("Step 5: KMeans Clustering")
-    st.markdown("We use the silhouette score to define the optimal number of clusters.")
+    # Step 5: Clusters
+    st.subheader("Step 5: Distribution of the clusters and the visitors throughout them")
+    # Données d'entrée : les colonnes normalisées
+    X = df_scaled[[col for col in df_scaled.columns if col.endswith('_scaled')]]
+    
+    st.subheader("Step 6: Cluster Assignments and Search")
+    visitor_search = st.text_input("Search for a specific Visitor ID (cluster assignment)")
+    if visitor_search:
+        filtered_cluster_df = df_kpi[df_kpi['visitor_id'].astype(str).str.contains(visitor_search)]
+        st.dataframe(filtered_cluster_df)
+    else:
+        st.dataframe(df_kpi[['visitor_id', 'cluster']].head(10))
 
-    scores = []
-    K_range = range(2, 7)
-    for k in K_range:
-        model = KMeans(n_clusters=k, random_state=42, n_init='auto')
-        labels = model.fit_predict(X_scaled)
-        score = silhouette_score(X_scaled, labels)
-        scores.append(score)
-
-    best_k = K_range[np.argmax(scores)]
-    st.write(f"Best number of clusters based on silhouette score: {best_k}")
-
-    # Fit model and assign labels
-    kmeans = KMeans(n_clusters=best_k, random_state=42, n_init='auto')
-    df_scaled['cluster'] = kmeans.fit_predict(X_scaled)
-
-    # Show cluster sizes
-    st.subheader("Step 6: Cluster Sizes")
-    cluster_counts = df_scaled['cluster'].value_counts().sort_index().reset_index()
-    cluster_counts.columns = ['Cluster', 'Number of Users']
-    st.dataframe(cluster_counts)
+    # Step 6: KPI Means per Cluster
+    st.subheader("Step 7: KPI Averages by Cluster")
+    kpi_orig_cols = [
+        'nb_clicks', 'nb_sessions', 'nb_pages_vues',
+        'nb_sessions_bounce', 'nb_sessions_commentees',
+        'delai_moyen_entre_sessions', 'nb_jours_actifs'
+    ]
+    df_clusters_summary = df_kpi.groupby('cluster')[kpi_orig_cols].mean().round(2)
+    st.dataframe(df_clusters_summary.reset_index())
