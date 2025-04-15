@@ -330,36 +330,13 @@ with tabs[4]:
     plt.tight_layout()
     st.pyplot(fig_box)
 
-    # Step 5: KMeans Clustering
-    st.subheader("Step 5: KMeans Clustering")
-    st.markdown("We use the silhouette score to define the optimal number of clusters.")
-
-    scores = []
-    K_range = range(2, 7)
-    for k in K_range:
-        model = KMeans(n_clusters=k, random_state=42, n_init='auto')
-        labels = model.fit_predict(X_scaled)
-        score = silhouette_score(X_scaled, labels)
-        scores.append(score)
-
-    best_k = K_range[np.argmax(scores)]
-    st.write(f"Best number of clusters based on silhouette score: {best_k}")
-
     # Fit final model
     X = df_scaled[[col for col in df_scaled.columns if col.endswith('_scaled')]]
     kmeans = KMeans(n_clusters=6, random_state=42, n_init='auto')
     df_kpi['cluster'] = kmeans.fit_predict(X)
 
-    # Step 6: Cluster Assignments
-    st.subheader("Step 6: Cluster Assignments and Search")
-    visitor_search = st.text_input("Search for a specific Visitor ID (cluster assignment)")
-    if visitor_search:
-        filtered_cluster_df = df_kpi[df_kpi['visitor_id'].astype(str).str.contains(visitor_search)]
-        st.dataframe(filtered_cluster_df)
-    else:
-        st.dataframe(df_kpi[['visitor_id', 'cluster']].head(10))
 
-    # Step 7: KPI Means per Cluster
+    # Step 5: KPI Means per Cluster
     st.subheader("Step 7: KPI Averages by Cluster")
     kpi_orig_cols = [
         'nb_clicks', 'nb_sessions', 'nb_pages_vues',
@@ -368,4 +345,12 @@ with tabs[4]:
     ]
     df_clusters_summary = df_kpi.groupby('cluster')[kpi_orig_cols].mean().round(2)
     st.dataframe(df_clusters_summary.reset_index())
-
+    
+    # Step 6: Cluster Assignments
+    st.subheader("Step 6: Cluster Assignments and Search")
+    visitor_search = st.text_input("Search for a specific Visitor ID to get their cluster assignment")
+    if visitor_search:
+        filtered_cluster_df = df_kpi[df_kpi['visitor_id'].astype(str).str.contains(visitor_search)]
+        st.dataframe(filtered_cluster_df)
+    else:
+        st.dataframe(df_kpi[['visitor_id', 'cluster']].head(10))
