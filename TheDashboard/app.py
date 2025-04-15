@@ -307,3 +307,49 @@ with tabs[4]:
 
     df_scaled = pd.DataFrame(X_scaled, columns=[f'{col}_scaled' for col in cols_to_transform])
     df_scaled['visitor_id'] = df_kpi['visitor_id'].values
+    # Step 3: Distribution
+    st.subheader("Step 3: Feature Distributions After Log Transformation")
+    selected_col = st.selectbox("Select a KPI to view its log distribution", options=[f'{col}_log' for col in cols_to_transform])
+    fig = plt.figure(figsize=(6, 4))
+    sns.histplot(df_kpi[selected_col], kde=True, bins=30)
+    plt.title(f"Distribution log of {selected_col.replace('_log', '')}")
+    plt.xlabel(selected_col)
+    plt.ylabel("Frequency")
+    plt.grid(True)
+    plt.tight_layout()
+    st.pyplot(fig)
+
+    # Step 4: Boxplots of all features
+    st.subheader("Step 4: Boxplot of Log-Transformed KPIs")
+    fig_box = plt.figure(figsize=(10, 5))
+    sns.boxplot(data=df_kpi[[f'{col}_log' for col in cols_to_transform]])
+    plt.xticks(rotation=45)
+    plt.title("Boxplot of log-transformed navigation KPIs")
+    plt.grid(True)
+    plt.tight_layout()
+    st.pyplot(fig_box)
+
+    # Step 5: KMeans Clustering
+    st.subheader("Step 5: KMeans Clustering")
+    st.markdown("We use the silhouette score to define the optimal number of clusters.")
+
+    scores = []
+    K_range = range(2, 7)
+    for k in K_range:
+        model = KMeans(n_clusters=k, random_state=42, n_init='auto')
+        labels = model.fit_predict(X_scaled)
+        score = silhouette_score(X_scaled, labels)
+        scores.append(score)
+
+    best_k = K_range[np.argmax(scores)]
+    st.write(f"Best number of clusters based on silhouette score: {best_k}")
+
+    # Fit model and assign labels
+    kmeans = KMeans(n_clusters=best_k, random_state=42, n_init='auto')
+    df_scaled['cluster'] = kmeans.fit_predict(X_scaled)
+
+    # Show cluster sizes
+    st.subheader("Step 6: Cluster Sizes")
+    cluster_counts = df_scaled['cluster'].value_counts().sort_index().reset_index()
+    cluster_counts.columns = ['Cluster', 'Number of Users']
+    st.dataframe(cluster_counts)
