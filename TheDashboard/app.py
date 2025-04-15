@@ -243,7 +243,7 @@ with tabs[3]:
 
 # 🧠 Clustering
 with tabs[4]:
-    st.header("🧠 Clustering")
+    st.header("🧠 Seesions + Clicks' Clustering")
     st.markdown("""
     This section applies unsupervised learning techniques to segment users based on their behavior.
     The analysis is based on click/session data and includes log transformation, normalization, and clustering.
@@ -291,7 +291,6 @@ with tabs[4]:
         st.dataframe(df_navigation_users.head(10))
 
     # Step 2: Preprocessing
-    st.subheader("Step 2: Preprocessing (Log Transformation & Scaling)")
     cols_to_transform = [
         'nb_clicks', 'nb_sessions', 'nb_pages_vues',
         'nb_sessions_bounce', 'nb_sessions_commentees',
@@ -309,7 +308,7 @@ with tabs[4]:
     df_scaled['visitor_id'] = df_kpi['visitor_id'].values
     
     # Step 3: Distribution
-    st.subheader("Step 3: Feature Distributions After Log Transformation")
+    st.subheader("Step 2: Feature Distributions After Log Transformation")
     selected_col = st.selectbox("Select a KPI to view its log distribution", options=[f'{col}_log' for col in cols_to_transform])
     fig = plt.figure(figsize=(6, 4))
     sns.histplot(df_kpi[selected_col], kde=True, bins=30)
@@ -321,7 +320,7 @@ with tabs[4]:
     st.pyplot(fig)
 
     # Step 4: Boxplots of all features
-    st.subheader("Step 4: Boxplot of Log-Transformed KPIs")
+    st.subheader("Step 3: Boxplot of Log-Transformed KPIs")
     fig_box = plt.figure(figsize=(10, 5))
     sns.boxplot(data=df_kpi[[f'{col}_log' for col in cols_to_transform]])
     plt.xticks(rotation=45)
@@ -337,7 +336,7 @@ with tabs[4]:
 
 
     # Step 5: KPI Means per Cluster
-    st.subheader("Step 5: KPI Averages by Cluster")
+    st.subheader("Step 4: KPI Averages by Cluster")
     kpi_orig_cols = [
         'nb_clicks', 'nb_sessions', 'nb_pages_vues',
         'nb_sessions_bounce', 'nb_sessions_commentees',
@@ -347,10 +346,13 @@ with tabs[4]:
     st.dataframe(df_clusters_summary.reset_index())
     
     # Step 6: Cluster Assignments
-    st.subheader("Step 6: Cluster Assignments and Search")
+    st.subheader("Step 5: Cluster Assignments and Search")
     visitor_search = st.text_input("Search for a specific Visitor ID to get their cluster assignment")
     if visitor_search:
         filtered_cluster_df = df_kpi[df_kpi['visitor_id'].astype(str).str.contains(visitor_search)]
         st.dataframe(filtered_cluster_df)
     else:
         st.dataframe(df_kpi[['visitor_id', 'cluster']].head(10))
+    
+    #Analysis of actions
+    st.header("🧠 Action's Clustering")
