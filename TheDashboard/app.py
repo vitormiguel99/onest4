@@ -250,7 +250,7 @@ with tabs[4]:
     """)
     
     # Création des KPI navigation par utilisateur
-    df_navigation_users = click_session.groupby('click_visitor_id').agg({
+    df_navigation_users = click_sessions_df.groupby('click_visitor_id').agg({
         'click_id': 'count',                                 # nb_clicks
         'session_id': pd.Series.nunique,                     # nb_sessions
         'session_num_pageviews': 'sum',                      # nb_pages_vues
