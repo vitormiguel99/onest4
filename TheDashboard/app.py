@@ -337,7 +337,7 @@ with tabs[4]:
 
 
     # Step 5: KPI Means per Cluster
-    st.subheader("Step 7: KPI Averages by Cluster")
+    st.subheader("Step 5: KPI Averages by Cluster")
     kpi_orig_cols = [
         'nb_clicks', 'nb_sessions', 'nb_pages_vues',
         'nb_sessions_bounce', 'nb_sessions_commentees',
