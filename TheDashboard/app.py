@@ -27,7 +27,7 @@ click_sessions_df['click_yyyymmdd'] = safe_to_datetime(click_sessions_df['click_
 click_sessions_df['session_yyyymmdd'] = safe_to_datetime(click_sessions_df['session_yyyymmdd'])
 
 # Tabs
-tabs = st.tabs(["🏠 Home", "📈 Overview", "🫱🏻‍🫲🏼Engagement", "📊 Classification", "🧠 Clustering"])
+tabs = st.tabs(["🏠 Home", "📈 Overview", "🫱🏻‍🫲🏼Engagement", "📊 Classification", "🧠 Seesions + Clicks' Clustering", "🧠 Actions' Clustering"])
 
 # 🏠 Home
 with tabs[0]:
@@ -354,140 +354,141 @@ with tabs[4]:
     else:
         st.dataframe(df_kpi[['visitor_id', 'cluster']].head(10))
     
-    #Analysis of actions
-    st.header("🧠 Actions' Clustering")
-    # 1. Users' KPIs
-    st.subheader("Step 1: Actions' KPIs per Visitor")
-    df_contribution_users = actions_df.groupby('action_visitor_id').agg(
-    nb_actions_total=('action_id', 'count'),
-    nb_types_actions_uniques=('action_name', pd.Series.nunique),
-    nb_groupes_actions=('action_group', pd.Series.nunique),
-    nb_jours_actifs=('action_yyyymmdd', pd.Series.nunique),
-    taux_repeat_visitor=('action_is_repeat_visitor', lambda x: x.sum() / len(x) if len(x) > 0 else 0),
-    nb_mediums_utilisés=('action_medium', pd.Series.nunique),
-    nb_sites_utilisés=('action_site_id', pd.Series.nunique),
-    nb_contributions=('action_name', lambda x: ((x == 'frontend create') | (x == 'editor publish')).sum()),
-    nb_modifications=('action_name', lambda x: (x == 'frontend modify').sum()),
-    nb_publications=('action_group', lambda x: (x == 'publish').sum())
-    ).reset_index()
+    with tabs[5]:
+        #Analysis of actions
+        st.header("🧠 Actions' Clustering")
+        # 1. Users' KPIs
+        st.subheader("Step 1: Actions' KPIs per Visitor")
+        df_contribution_users = actions_df.groupby('action_visitor_id').agg(
+        nb_actions_total=('action_id', 'count'),
+        nb_types_actions_uniques=('action_name', pd.Series.nunique),
+        nb_groupes_actions=('action_group', pd.Series.nunique),
+        nb_jours_actifs=('action_yyyymmdd', pd.Series.nunique),
+        taux_repeat_visitor=('action_is_repeat_visitor', lambda x: x.sum() / len(x) if len(x) > 0 else 0),
+        nb_mediums_utilisés=('action_medium', pd.Series.nunique),
+        nb_sites_utilisés=('action_site_id', pd.Series.nunique),
+        nb_contributions=('action_name', lambda x: ((x == 'frontend create') | (x == 'editor publish')).sum()),
+        nb_modifications=('action_name', lambda x: (x == 'frontend modify').sum()),
+        nb_publications=('action_group', lambda x: (x == 'publish').sum())
+        ).reset_index()
+        
+        # Create dummy variables for medium usage
+        medium_dummies = pd.get_dummies(actions_df[['action_visitor_id', 'action_medium']],
+                                        columns=['action_medium'],
+                                        prefix='medium',
+                                        dtype=int)
+        
+        # Aggregate to get 1 if a medium is used at least once
+        medium_usage = medium_dummies.groupby('action_visitor_id').max().reset_index()
+        
+        # Merge KPIs with dummy data
+        df_contribution_users = pd.merge(df_contribution_users, medium_usage, on='action_visitor_id', how='left')
+        
+        # Interactive search bar
+        search_id = st.text_input("🔍 Search for a specific Visitor ID to get their Actions' KPIs")
+        
+        if search_id:
+            filtered = df_contribution_users[df_contribution_users['action_visitor_id'].astype(str).str.contains(search_id)]
+            st.dataframe(filtered)
+        else:
+            st.dataframe(df_contribution_users.head(10))
     
-    # Create dummy variables for medium usage
-    medium_dummies = pd.get_dummies(actions_df[['action_visitor_id', 'action_medium']],
-                                    columns=['action_medium'],
-                                    prefix='medium',
-                                    dtype=int)
+        
+        # Step 2: Contribution KPI Distributions
+        st.subheader("Step 2: Contribution KPI Distributions")
+        kpi_cols = [
+            'nb_actions_total',
+            'nb_types_actions_uniques',
+            'nb_groupes_actions',
+            'nb_jours_actifs',
+            'taux_repeat_visitor',
+            'nb_mediums_utilisés',
+            'nb_sites_utilisés',
+            'nb_contributions',
+            'nb_modifications',
+            'nb_publications'
+        ]
     
-    # Aggregate to get 1 if a medium is used at least once
-    medium_usage = medium_dummies.groupby('action_visitor_id').max().reset_index()
+        selected_kpi = st.selectbox("Select a Contribution KPI to view its distribution", options=kpi_cols)
+        fig_kpi_dist = plt.figure(figsize=(6, 4))
+        sns.histplot(df_contribution_users[selected_kpi], kde=True, bins=30)
+        plt.title(f"Distribution of {selected_kpi}")
+        plt.xlabel(selected_kpi)
+        plt.ylabel("Frequency")
+        plt.grid(True)
+        plt.tight_layout()
+        st.pyplot(fig_kpi_dist)
     
-    # Merge KPIs with dummy data
-    df_contribution_users = pd.merge(df_contribution_users, medium_usage, on='action_visitor_id', how='left')
+        # Global boxplot for KPI contribution
+        st.subheader("Global Boxplot of Contribution KPIs")
+        fig_kpi_box = plt.figure(figsize=(12, 6))
+        sns.boxplot(data=df_contribution_users[kpi_cols])
+        plt.xticks(rotation=45)
+        plt.title("Boxplot of Contribution KPIs")
+        plt.grid(True)
+        plt.tight_layout()
+        st.pyplot(fig_kpi_box)
     
-    # Interactive search bar
-    search_id = st.text_input("🔍 Search for a specific Visitor ID to get their Actions' KPIs")
+        # Step 3 Clusters based on Actions
+        st.subheader("Step 3: Clusters based on action")
+        # Step 1: KPI Aggregation
+        df_contribution_users = actions_df.groupby('action_visitor_id').agg(
+        nb_actions_total=('action_id', 'count'),
+        nb_types_actions_uniques=('action_name', pd.Series.nunique),
+        nb_groupes_actions=('action_group', pd.Series.nunique),
+        nb_jours_actifs=('action_yyyymmdd', pd.Series.nunique),
+        taux_repeat_visitor=('action_is_repeat_visitor', lambda x: x.sum() / len(x)),
+        nb_mediums_utilisés=('action_medium', pd.Series.nunique),
+        nb_sites_utilisés=('action_site_id', pd.Series.nunique),
+        nb_contributions=('action_name', lambda x: ((x == 'frontend create') | (x == 'editor publish')).sum()),
+        nb_modifications=('action_name', lambda x: (x == 'frontend modify').sum()),
+        nb_publications=('action_group', lambda x: (x == 'publish').sum())
+        ).reset_index()
     
-    if search_id:
-        filtered = df_contribution_users[df_contribution_users['action_visitor_id'].astype(str).str.contains(search_id)]
-        st.dataframe(filtered)
-    else:
-        st.dataframe(df_contribution_users.head(10))
-
-    
-    # Step 2: Contribution KPI Distributions
-    st.subheader("Step 2: Contribution KPI Distributions")
-    kpi_cols = [
-        'nb_actions_total',
-        'nb_types_actions_uniques',
-        'nb_groupes_actions',
-        'nb_jours_actifs',
-        'taux_repeat_visitor',
-        'nb_mediums_utilisés',
-        'nb_sites_utilisés',
-        'nb_contributions',
-        'nb_modifications',
-        'nb_publications'
-    ]
-
-    selected_kpi = st.selectbox("Select a Contribution KPI to view its distribution", options=kpi_cols)
-    fig_kpi_dist = plt.figure(figsize=(6, 4))
-    sns.histplot(df_contribution_users[selected_kpi], kde=True, bins=30)
-    plt.title(f"Distribution of {selected_kpi}")
-    plt.xlabel(selected_kpi)
-    plt.ylabel("Frequency")
-    plt.grid(True)
-    plt.tight_layout()
-    st.pyplot(fig_kpi_dist)
-
-    # Global boxplot for KPI contribution
-    st.subheader("Global Boxplot of Contribution KPIs")
-    fig_kpi_box = plt.figure(figsize=(12, 6))
-    sns.boxplot(data=df_contribution_users[kpi_cols])
-    plt.xticks(rotation=45)
-    plt.title("Boxplot of Contribution KPIs")
-    plt.grid(True)
-    plt.tight_layout()
-    st.pyplot(fig_kpi_box)
-
-    # Step 3 Clusters based on Actions
-    st.subheader("Step 3: Clusters based on action")
-    # Step 1: KPI Aggregation
-    df_contribution_users = actions_df.groupby('action_visitor_id').agg(
-    nb_actions_total=('action_id', 'count'),
-    nb_types_actions_uniques=('action_name', pd.Series.nunique),
-    nb_groupes_actions=('action_group', pd.Series.nunique),
-    nb_jours_actifs=('action_yyyymmdd', pd.Series.nunique),
-    taux_repeat_visitor=('action_is_repeat_visitor', lambda x: x.sum() / len(x)),
-    nb_mediums_utilisés=('action_medium', pd.Series.nunique),
-    nb_sites_utilisés=('action_site_id', pd.Series.nunique),
-    nb_contributions=('action_name', lambda x: ((x == 'frontend create') | (x == 'editor publish')).sum()),
-    nb_modifications=('action_name', lambda x: (x == 'frontend modify').sum()),
-    nb_publications=('action_group', lambda x: (x == 'publish').sum())
-    ).reset_index()
-
-    # Medium dummies
-    medium_dummies = pd.get_dummies(actions_df[['action_visitor_id', 'action_medium']], columns=['action_medium'], prefix='medium', dtype=int)
-    medium_usage = medium_dummies.groupby('action_visitor_id').max().reset_index()
-    df_contribution_users = pd.merge(df_contribution_users, medium_usage, on='action_visitor_id', how='left')
-    
-    # Step 2: Log transform + normalization
-    kpi_cols = [
-        'nb_actions_total', 'nb_types_actions_uniques', 'nb_groupes_actions',
-        'nb_jours_actifs', 'taux_repeat_visitor', 'nb_mediums_utilisés',
-        'nb_sites_utilisés', 'nb_contributions', 'nb_modifications', 'nb_publications'
-    ]
-    df_kpi_contrib = df_contribution_users.copy()
-    for col in kpi_cols:
-        df_kpi_contrib[f'{col}_log'] = np.log1p(df_kpi_contrib[col])
-    
-    log_cols = [f'{col}_log' for col in kpi_cols]
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(df_kpi_contrib[log_cols])
-    
-    medium_cols = [col for col in df_kpi_contrib.columns if col.startswith('medium_')]
-    df_contrib_scaled = pd.DataFrame(X_scaled, columns=[f'{col}_scaled' for col in kpi_cols])
-    df_contrib_scaled['action_visitor_id'] = df_kpi_contrib['action_visitor_id'].values
-    df_contrib_scaled = pd.concat([df_contrib_scaled, df_kpi_contrib[medium_cols].reset_index(drop=True)], axis=1)
-    
-    # Step 3: Clustering
-    kmeans_final = KMeans(n_clusters=6, random_state=42, n_init='auto')
-    df_kpi_contrib['cluster'] = kmeans_final.fit_predict(df_contrib_scaled.drop(columns=['action_visitor_id']))
-    
-    # Display cluster sizes
-    st.subheader("📊 Cluster Sizes")
-    cluster_counts = df_kpi_contrib['cluster'].value_counts().sort_index().reset_index()
-    cluster_counts.columns = ['cluster', 'nb_users']
-    st.dataframe(cluster_counts)
-    
-    # KPI Summary per cluster
-    st.subheader("📈 KPI Averages by Cluster")
-    df_contrib_cluster_summary = df_kpi_contrib.groupby('cluster')[kpi_cols].mean().round(2).reset_index()
-    st.dataframe(df_contrib_cluster_summary)
-    
-    # Searchable cluster table
-    st.subheader("🔍 Search Cluster Assignments")
-    visitor_input = st.text_input("Enter a Visitor ID to find their cluster")
-    if visitor_input:
-        filtered_df = df_kpi_contrib[df_kpi_contrib['action_visitor_id'].astype(str).str.contains(visitor_input)]
-        st.dataframe(filtered_df)
-    else:
-        st.dataframe(df_kpi_contrib[['action_visitor_id', 'cluster']].head(10))
+        # Medium dummies
+        medium_dummies = pd.get_dummies(actions_df[['action_visitor_id', 'action_medium']], columns=['action_medium'], prefix='medium', dtype=int)
+        medium_usage = medium_dummies.groupby('action_visitor_id').max().reset_index()
+        df_contribution_users = pd.merge(df_contribution_users, medium_usage, on='action_visitor_id', how='left')
+        
+        # Step 2: Log transform + normalization
+        kpi_cols = [
+            'nb_actions_total', 'nb_types_actions_uniques', 'nb_groupes_actions',
+            'nb_jours_actifs', 'taux_repeat_visitor', 'nb_mediums_utilisés',
+            'nb_sites_utilisés', 'nb_contributions', 'nb_modifications', 'nb_publications'
+        ]
+        df_kpi_contrib = df_contribution_users.copy()
+        for col in kpi_cols:
+            df_kpi_contrib[f'{col}_log'] = np.log1p(df_kpi_contrib[col])
+        
+        log_cols = [f'{col}_log' for col in kpi_cols]
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(df_kpi_contrib[log_cols])
+        
+        medium_cols = [col for col in df_kpi_contrib.columns if col.startswith('medium_')]
+        df_contrib_scaled = pd.DataFrame(X_scaled, columns=[f'{col}_scaled' for col in kpi_cols])
+        df_contrib_scaled['action_visitor_id'] = df_kpi_contrib['action_visitor_id'].values
+        df_contrib_scaled = pd.concat([df_contrib_scaled, df_kpi_contrib[medium_cols].reset_index(drop=True)], axis=1)
+        
+        # Step 3: Clustering
+        kmeans_final = KMeans(n_clusters=6, random_state=42, n_init='auto')
+        df_kpi_contrib['cluster'] = kmeans_final.fit_predict(df_contrib_scaled.drop(columns=['action_visitor_id']))
+        
+        # Display cluster sizes
+        st.subheader("📊 Cluster Sizes")
+        cluster_counts = df_kpi_contrib['cluster'].value_counts().sort_index().reset_index()
+        cluster_counts.columns = ['cluster', 'nb_users']
+        st.dataframe(cluster_counts)
+        
+        # KPI Summary per cluster
+        st.subheader("📈 KPI Averages by Cluster")
+        df_contrib_cluster_summary = df_kpi_contrib.groupby('cluster')[kpi_cols].mean().round(2).reset_index()
+        st.dataframe(df_contrib_cluster_summary)
+        
+        # Searchable cluster table
+        st.subheader("🔍 Search Cluster Assignments")
+        visitor_input = st.text_input("Enter a Visitor ID to find their cluster")
+        if visitor_input:
+            filtered_df = df_kpi_contrib[df_kpi_contrib['action_visitor_id'].astype(str).str.contains(visitor_input)]
+            st.dataframe(filtered_df)
+        else:
+            st.dataframe(df_kpi_contrib[['action_visitor_id', 'cluster']].head(10))
