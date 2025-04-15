@@ -27,7 +27,7 @@ click_sessions_df['click_yyyymmdd'] = safe_to_datetime(click_sessions_df['click_
 click_sessions_df['session_yyyymmdd'] = safe_to_datetime(click_sessions_df['session_yyyymmdd'])
 
 # Tabs
-tabs = st.tabs(["🏠 Home", "📈 Overview", "🫱🏻‍🫲🏼Engagement", "📊 Classification", "🧠 Seesions + Clicks' Clustering", "🧠 Actions' Clustering"])
+tabs = st.tabs(["🏠 Home", "📈 Overview", "🫱🏻‍🫲🏼Engagement", "📊 Classification", "🧠 Seesions + Clicks' Clustering", "🧠 Actions' Clustering","💡Insights and Suggestions"])
 
 # 🏠 Home
 with tabs[0]:
@@ -243,114 +243,114 @@ with tabs[3]:
 
 # 🧠 Clustering
 with tabs[4]:
-    st.header("🧠 Seesions + Clicks' Clustering")
-    st.markdown("""
-    This section applies unsupervised learning techniques to segment users based on their behavior.
-    The analysis is based on click/session data and includes log transformation, normalization, and clustering.
-    """)
-
-    # Step 1: KPI table per user
-    st.subheader("Step 1: Summary of User Behavior (KPIs)")
-    # Création des KPI navigation par utilisateur
-    df_navigation_users = click_sessions_df.groupby('click_visitor_id').agg({
-        'click_id': 'count',                                 # nb_clicks
-        'session_id': pd.Series.nunique,                     # nb_sessions
-        'session_num_pageviews': 'sum',                      # nb_pages_vues
-        'session_is_bounce': 'sum',                          # nb_sessions_bounce
-        'session_num_comments': lambda x: (x > 0).sum(),     # nb_sessions_commentees
-        'session_time_sinse_priorsession': 'mean',           # delai_moyen_entre_sessions
-        'click_yyyymmdd': pd.Series.nunique                  # nb_jours_actifs
-    }).reset_index()
+        st.header("🧠 Seesions + Clicks' Clustering")
+        st.markdown("""
+        This section applies unsupervised learning techniques to segment users based on their behavior.
+        The analysis is based on click/session data and includes log transformation, normalization, and clustering.
+        """)
     
-    # Renommage des colonnes
-    df_navigation_users.columns = [
-        'visitor_id',
-        'nb_clicks',
-        'nb_sessions',
-        'nb_pages_vues',
-        'nb_sessions_bounce',
-        'nb_sessions_commentees',
-        'delai_moyen_entre_sessions',
-        'nb_jours_actifs'
-    ]
+        # Step 1: KPI table per user
+        st.subheader("Step 1: Summary of User Behavior (KPIs)")
+        # Création des KPI navigation par utilisateur
+        df_navigation_users = click_sessions_df.groupby('click_visitor_id').agg({
+            'click_id': 'count',                                 # nb_clicks
+            'session_id': pd.Series.nunique,                     # nb_sessions
+            'session_num_pageviews': 'sum',                      # nb_pages_vues
+            'session_is_bounce': 'sum',                          # nb_sessions_bounce
+            'session_num_comments': lambda x: (x > 0).sum(),     # nb_sessions_commentees
+            'session_time_sinse_priorsession': 'mean',           # delai_moyen_entre_sessions
+            'click_yyyymmdd': pd.Series.nunique                  # nb_jours_actifs
+        }).reset_index()
+        
+        # Renommage des colonnes
+        df_navigation_users.columns = [
+            'visitor_id',
+            'nb_clicks',
+            'nb_sessions',
+            'nb_pages_vues',
+            'nb_sessions_bounce',
+            'nb_sessions_commentees',
+            'delai_moyen_entre_sessions',
+            'nb_jours_actifs'
+        ]
+        
+        # Conversion du délai moyen entre sessions de secondes en jours
+        df_navigation_users['delai_moyen_entre_sessions'] = df_navigation_users['delai_moyen_entre_sessions'] / (60 * 60 * 24)
+        
+        # Aperçu du résultat
+        df_navigation_users.head()
+        
+        # 🔍 Search box
+        visitor_input_kpi = st.text_input("Search for a specific Visitor ID to check their KPIs")
     
-    # Conversion du délai moyen entre sessions de secondes en jours
-    df_navigation_users['delai_moyen_entre_sessions'] = df_navigation_users['delai_moyen_entre_sessions'] / (60 * 60 * 24)
+        # Filter and display
+        if visitor_input_kpi:
+            filtered_visitor_kpi = df_navigation_users[df_navigation_users['visitor_id'].astype(str).str.contains(visitor_input_kpi)]
+            st.dataframe(filtered_visitor_kpi)
+        else:
+            st.dataframe(df_navigation_users.head(10))
     
-    # Aperçu du résultat
-    df_navigation_users.head()
+        # Step 2: Preprocessing
+        cols_to_transform = [
+            'nb_clicks', 'nb_sessions', 'nb_pages_vues',
+            'nb_sessions_bounce', 'nb_sessions_commentees',
+            'delai_moyen_entre_sessions', 'nb_jours_actifs'
+        ]
     
-    # 🔍 Search box
-    visitor_input_kpi = st.text_input("Search for a specific Visitor ID to check their KPIs")
-
-    # Filter and display
-    if visitor_input_kpi:
-        filtered_visitor_kpi = df_navigation_users[df_navigation_users['visitor_id'].astype(str).str.contains(visitor_input_kpi)]
-        st.dataframe(filtered_visitor_kpi)
-    else:
-        st.dataframe(df_navigation_users.head(10))
-
-    # Step 2: Preprocessing
-    cols_to_transform = [
-        'nb_clicks', 'nb_sessions', 'nb_pages_vues',
-        'nb_sessions_bounce', 'nb_sessions_commentees',
-        'delai_moyen_entre_sessions', 'nb_jours_actifs'
-    ]
-
-    df_kpi = df_navigation_users.copy()
-    for col in cols_to_transform:
-        df_kpi[f'{col}_log'] = np.log1p(df_kpi[col])
-
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(df_kpi[[f'{col}_log' for col in cols_to_transform]])
-
-    df_scaled = pd.DataFrame(X_scaled, columns=[f'{col}_scaled' for col in cols_to_transform])
-    df_scaled['visitor_id'] = df_kpi['visitor_id'].values
+        df_kpi = df_navigation_users.copy()
+        for col in cols_to_transform:
+            df_kpi[f'{col}_log'] = np.log1p(df_kpi[col])
     
-    # Step 3: Distribution
-    st.subheader("Step 2: Feature Distributions After Log Transformation")
-    selected_col = st.selectbox("Select a KPI to view its log distribution", options=[f'{col}_log' for col in cols_to_transform])
-    fig = plt.figure(figsize=(6, 4))
-    sns.histplot(df_kpi[selected_col], kde=True, bins=30)
-    plt.title(f"Distribution log of {selected_col.replace('_log', '')}")
-    plt.xlabel(selected_col)
-    plt.ylabel("Frequency")
-    plt.grid(True)
-    plt.tight_layout()
-    st.pyplot(fig)
-
-    # Step 4: Boxplots of all features
-    st.subheader("Step 3: Boxplot of Log-Transformed KPIs")
-    fig_box = plt.figure(figsize=(10, 5))
-    sns.boxplot(data=df_kpi[[f'{col}_log' for col in cols_to_transform]])
-    plt.xticks(rotation=45)
-    plt.title("Boxplot of log-transformed navigation KPIs")
-    plt.grid(True)
-    plt.tight_layout()
-    st.pyplot(fig_box)
-
-    # Fit final model
-    X = df_scaled[[col for col in df_scaled.columns if col.endswith('_scaled')]]
-    kmeans = KMeans(n_clusters=6, random_state=42, n_init='auto')
-    df_kpi['cluster'] = kmeans.fit_predict(X)
-
-
-    # Step 5: KPI Means per Cluster
-    st.subheader("Step 4: KPI Averages by Cluster")
-    kpi_orig_cols = [
-        'nb_clicks', 'nb_sessions', 'nb_pages_vues',
-        'nb_sessions_bounce', 'nb_sessions_commentees',
-        'delai_moyen_entre_sessions', 'nb_jours_actifs'
-    ]
-    df_clusters_summary = df_kpi.groupby('cluster')[kpi_orig_cols].mean().round(2)
-    st.dataframe(df_clusters_summary.reset_index())
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(df_kpi[[f'{col}_log' for col in cols_to_transform]])
     
-    # Step 6: Cluster Assignments
-    st.subheader("Step 5: Cluster Assignments and Search")
-    visitor_search = st.text_input("Search for a specific Visitor ID to get their cluster assignment")
-    if visitor_search:
-        filtered_cluster_df = df_kpi[df_kpi['visitor_id'].astype(str).str.contains(visitor_search)]
-        st.dataframe(filtered_cluster_df)
+        df_scaled = pd.DataFrame(X_scaled, columns=[f'{col}_scaled' for col in cols_to_transform])
+        df_scaled['visitor_id'] = df_kpi['visitor_id'].values
+        
+        # Step 3: Distribution
+        st.subheader("Step 2: Feature Distributions After Log Transformation")
+        selected_col = st.selectbox("Select a KPI to view its log distribution", options=[f'{col}_log' for col in cols_to_transform])
+        fig = plt.figure(figsize=(6, 4))
+        sns.histplot(df_kpi[selected_col], kde=True, bins=30)
+        plt.title(f"Distribution log of {selected_col.replace('_log', '')}")
+        plt.xlabel(selected_col)
+        plt.ylabel("Frequency")
+        plt.grid(True)
+        plt.tight_layout()
+        st.pyplot(fig)
+    
+        # Step 4: Boxplots of all features
+        st.subheader("Step 3: Boxplot of Log-Transformed KPIs")
+        fig_box = plt.figure(figsize=(10, 5))
+        sns.boxplot(data=df_kpi[[f'{col}_log' for col in cols_to_transform]])
+        plt.xticks(rotation=45)
+        plt.title("Boxplot of log-transformed navigation KPIs")
+        plt.grid(True)
+        plt.tight_layout()
+        st.pyplot(fig_box)
+    
+        # Fit final model
+        X = df_scaled[[col for col in df_scaled.columns if col.endswith('_scaled')]]
+        kmeans = KMeans(n_clusters=6, random_state=42, n_init='auto')
+        df_kpi['cluster'] = kmeans.fit_predict(X)
+    
+    
+        # Step 5: KPI Means per Cluster
+        st.subheader("Step 4: KPI Averages by Cluster")
+        kpi_orig_cols = [
+            'nb_clicks', 'nb_sessions', 'nb_pages_vues',
+            'nb_sessions_bounce', 'nb_sessions_commentees',
+            'delai_moyen_entre_sessions', 'nb_jours_actifs'
+        ]
+        df_clusters_summary = df_kpi.groupby('cluster')[kpi_orig_cols].mean().round(2)
+        st.dataframe(df_clusters_summary.reset_index())
+        
+        # Step 6: Cluster Assignments
+        st.subheader("Step 5: Cluster Assignments and Search")
+        visitor_search = st.text_input("Search for a specific Visitor ID to get their cluster assignment")
+        if visitor_search:
+            filtered_cluster_df = df_kpi[df_kpi['visitor_id'].astype(str).str.contains(visitor_search)]
+            st.dataframe(filtered_cluster_df)
     else:
         st.dataframe(df_kpi[['visitor_id', 'cluster']].head(10))
     
@@ -492,9 +492,11 @@ with tabs[4]:
             st.dataframe(filtered_df)
         else:
             st.dataframe(df_kpi_contrib[['action_visitor_id', 'cluster']].head(10))
-
-            # Step 4: Engagement score + personas
-        st.subheader("Step 4: Cluster Personas Based on Engagement")
+    
+    with tabs[6]:
+        st.header("💡Insights and Suggestions")
+        # Step 1: Engagement score + personas
+        st.subheader("Step 1: Cluster Personas Based on Engagement")
     
         action_weights = {
             'editor publish': 5,
@@ -556,4 +558,95 @@ with tabs[4]:
     
         st.subheader("📌 Cluster Personas Summary")
         st.dataframe(cluster_score_summary)
+
+        #Step 2: Suggestions
+        
+        st.subheader("Step 2: Combined Persona Matrix")
+        navigation_personas = [
+            "Curieux furtif", "Lecteur discret", "Indécis",
+            "Éclaireur à convertir", "Utilisateur stable", "Explorateur intensif"
+        ]
     
+        contribution_personas = [
+            "Profil dormant", "Simple observateur", "Éclaireur à convertir",
+            "Collaborateur régulier", "Utilisateur métier productif", "Ambassadeur éditorial"
+        ]
+    
+        persona_scores = {
+            "Profil dormant": 0.02,
+            "Simple observateur": 11.95,
+            "Éclaireur à convertir": 18.85,
+            "Collaborateur régulier": 30.33,
+            "Utilisateur métier productif": 30.42,
+            "Ambassadeur éditorial": 74.70
+        }
+    
+        matrix_data = {}
+        for nav in navigation_personas:
+            matrix_data[nav] = []
+            for contrib in contribution_personas:
+                score = persona_scores[contrib]
+                if score <= 20:
+                    label = "Furtif passif"
+                elif score <= 40:
+                    label = "Profil à activer"
+                elif score <= 60:
+                    label = "Engagement modéré"
+                elif score <= 80:
+                    label = "Actif à valoriser"
+                else:
+                    label = "Ultra engagé"
+                matrix_data[nav].append(f"{label} ({score:.2f})")
+    
+        persona_combined_matrix = pd.DataFrame(matrix_data, index=contribution_personas).T
+        st.write("### 🔗 Combined Matrix")
+        st.dataframe(persona_combined_matrix)
+    
+        # Étape 2 : Flatten pour analyse
+        flat_data = []
+        for nav_persona in persona_combined_matrix.index:
+            for contrib_persona in persona_combined_matrix.columns:
+                value = persona_combined_matrix.loc[nav_persona, contrib_persona]
+                label, score = value.rsplit("(", 1)
+                label = label.strip()
+                score = float(score.replace(")", ""))
+                flat_data.append({
+                    "navigation_persona": nav_persona,
+                    "contribution_persona": contrib_persona,
+                    "combined_label": label,
+                    "score": score
+                })
+    
+        df_flat = pd.DataFrame(flat_data)
+    
+        # Étape 3 : Groupement
+        df_grouped = df_flat.groupby('combined_label').agg(
+            score_moyen=('score', 'mean'),
+            nb_combinaisons=('score', 'count')
+        ).reset_index()
+    
+        label_marketing = {
+            "Ultra engagé": "Leader d'opinion",
+            "Actif à valoriser": "Expert discret",
+            "Engagement modéré": "Contributeur régulier",
+            "Profil à activer": "Curieux à convertir",
+            "Furtif passif": "Public fantôme"
+        }
+        df_grouped['persona_marketing'] = df_grouped['combined_label'].map(label_marketing)
+    
+        # Étape 4 : Ajouter 3 personas
+        extra_rows = pd.DataFrame([
+            {"persona_marketing": "Ambassadeur engagé", "score_moyen": 85.0, "nb_combinaisons": 3},
+            {"persona_marketing": "Contributeur fiable", "score_moyen": 59.1, "nb_combinaisons": 3},
+            {"persona_marketing": "Découvreur hésitant", "score_moyen": 20.0, "nb_combinaisons": 3}
+        ])
+    
+        df_final_personas = pd.concat([
+            df_grouped[['persona_marketing', 'score_moyen', 'nb_combinaisons']],
+            extra_rows
+        ], ignore_index=True)
+    
+        df_final_personas = df_final_personas.sort_values(by='score_moyen', ascending=False).reset_index(drop=True)
+    
+        st.subheader("🎯 Final Marketing Personas")
+        st.dataframe(df_final_personas)
