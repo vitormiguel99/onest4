@@ -355,4 +355,40 @@ with tabs[4]:
         st.dataframe(df_kpi[['visitor_id', 'cluster']].head(10))
     
     #Analysis of actions
-    st.header("🧠 Action's Clustering")
+    st.header("🧠 Actions' Clustering")
+    #Users' KPIs
+    st.subheader("Step 1: Actions' KPIs per Visitor")
+    df_contribution_users = actions_df.groupby('action_visitor_id').agg(
+    nb_actions_total=('action_id', 'count'),
+    nb_types_actions_uniques=('action_name', pd.Series.nunique),
+    nb_groupes_actions=('action_group', pd.Series.nunique),
+    nb_jours_actifs=('action_yyyymmdd', pd.Series.nunique),
+    taux_repeat_visitor=('action_is_repeat_visitor', lambda x: x.sum() / len(x) if len(x) > 0 else 0),
+    nb_mediums_utilisés=('action_medium', pd.Series.nunique),
+    nb_sites_utilisés=('action_site_id', pd.Series.nunique),
+    nb_contributions=('action_name', lambda x: ((x == 'frontend create') | (x == 'editor publish')).sum()),
+    nb_modifications=('action_name', lambda x: (x == 'frontend modify').sum()),
+    nb_publications=('action_group', lambda x: (x == 'publish').sum())
+    ).reset_index()
+    
+    # Create dummy variables for medium usage
+    medium_dummies = pd.get_dummies(actions_df[['action_visitor_id', 'action_medium']],
+                                    columns=['action_medium'],
+                                    prefix='medium',
+                                    dtype=int)
+    
+    # Aggregate to get 1 if a medium is used at least once
+    medium_usage = medium_dummies.groupby('action_visitor_id').max().reset_index()
+    
+    # Merge KPIs with dummy data
+    df_contribution_users = pd.merge(df_contribution_users, medium_usage, on='action_visitor_id', how='left')
+    
+    # Interactive search bar
+    search_id = st.text_input("🔍 Search for a specific Visitor ID to get their Actions' KPIs")
+    
+    if search_id:
+        filtered = df_contribution_users[df_contribution_users['action_visitor_id'].astype(str).str.contains(search_id)]
+        st.dataframe(filtered)
+    else:
+        st.dataframe(df_contribution_users.head(10))
+    
