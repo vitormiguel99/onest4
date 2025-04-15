@@ -248,7 +248,9 @@ with tabs[4]:
     This section applies unsupervised learning techniques to segment users based on their behavior.
     The analysis is based on click/session data and includes log transformation, normalization, and clustering.
     """)
-    
+
+    # Step 1: KPI table per user
+    st.subheader("Step 1: Summary of User Behavior (KPIs)")
     # Création des KPI navigation par utilisateur
     df_navigation_users = click_sessions_df.groupby('click_visitor_id').agg({
         'click_id': 'count',                                 # nb_clicks
@@ -279,11 +281,29 @@ with tabs[4]:
     df_navigation_users.head()
     
     # 🔍 Search box
-    visitor_input = st.text_input("Search for a specific Visitor ID to check their cluster")
+    visitor_input_kpi = st.text_input("Search for a specific Visitor ID to check their KPIs")
 
     # Filter and display
-    if visitor_input:
-        filtered_df = df_navigation_users[df_navigation_users['visitor_id'].astype(str).str.contains(visitor_input)]
-        st.dataframe(filtered_df)
+    if visitor_input_kpi:
+        filtered_visitor_kpi = df_navigation_users[df_navigation_users['visitor_id'].astype(str).str.contains(visitor_input_kpi)]
+        st.dataframe(filtered_visitor_kpi)
     else:
         st.dataframe(df_navigation_users.head(10))
+
+    # Step 2: Preprocessing
+    st.subheader("Step 2: Preprocessing (Log Transformation & Scaling)")
+    cols_to_transform = [
+        'nb_clicks', 'nb_sessions', 'nb_pages_vues',
+        'nb_sessions_bounce', 'nb_sessions_commentees',
+        'delai_moyen_entre_sessions', 'nb_jours_actifs'
+    ]
+
+    df_kpi = df_navigation_users.copy()
+    for col in cols_to_transform:
+        df_kpi[f'{col}_log'] = np.log1p(df_kpi[col])
+
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(df_kpi[[f'{col}_log' for col in cols_to_transform]])
+
+    df_scaled = pd.DataFrame(X_scaled, columns=[f'{col}_scaled' for col in cols_to_transform])
+    df_scaled['visitor_id'] = df_kpi['visitor_id'].values
