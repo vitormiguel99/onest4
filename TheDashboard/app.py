@@ -248,19 +248,19 @@ with tabs[4]:
     This section applies unsupervised learning techniques to segment users based on their behavior.
     The analysis is based on click/session data and includes log transformation, normalization, and clustering.
     """)
-
-    # Step 1: KPI table per user
-    st.subheader("Step 1: Summary of User Behavior (KPIs)")
-    df_navigation_users = click_sessions_df.groupby('click_visitor_id').agg({
-        'click_id': 'count',
-        'click_session_id': pd.Series.nunique,
-        'click_num_pageviews': 'sum',
-        'session_is_bounce': 'sum',
-        'session_num_comments': lambda x: (x > 0).sum(),
-        'session_time_sinse_priorsession': 'mean',
-        'click_yyyymmdd': pd.Series.nunique
+    
+    # Création des KPI navigation par utilisateur
+    df_navigation_users = click_session.groupby('click_visitor_id').agg({
+        'click_id': 'count',                                 # nb_clicks
+        'session_id': pd.Series.nunique,                     # nb_sessions
+        'session_num_pageviews': 'sum',                      # nb_pages_vues
+        'session_is_bounce': 'sum',                          # nb_sessions_bounce
+        'session_num_comments': lambda x: (x > 0).sum(),     # nb_sessions_commentees
+        'session_time_sinse_priorsession': 'mean',           # delai_moyen_entre_sessions
+        'click_yyyymmdd': pd.Series.nunique                  # nb_jours_actifs
     }).reset_index()
-
+    
+    # Renommage des colonnes
     df_navigation_users.columns = [
         'visitor_id',
         'nb_clicks',
@@ -271,60 +271,19 @@ with tabs[4]:
         'delai_moyen_entre_sessions',
         'nb_jours_actifs'
     ]
-
+    
+    # Conversion du délai moyen entre sessions de secondes en jours
     df_navigation_users['delai_moyen_entre_sessions'] = df_navigation_users['delai_moyen_entre_sessions'] / (60 * 60 * 24)
-    st.dataframe(df_navigation_users.head(10))
+    
+    # Aperçu du résultat
+    df_navigation_users.head()
+    
+    # 🔍 Search box
+    visitor_input = st.text_input("Search for a specific Visitor ID to check their cluster")
 
-    # Step 2: Preprocessing
-    st.subheader("Step 2: Preprocessing (Log Transformation & Scaling)")
-    cols_to_transform = [
-        'nb_clicks', 'nb_sessions', 'nb_pages_vues',
-        'nb_sessions_bounce', 'nb_sessions_commentees',
-        'delai_moyen_entre_sessions', 'nb_jours_actifs'
-    ]
-
-    df_kpi = df_navigation_users.copy()
-    for col in cols_to_transform:
-        df_kpi[f'{col}_log'] = np.log1p(df_kpi[col])
-
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(df_kpi[[f'{col}_log' for col in cols_to_transform]])
-
-    df_scaled = pd.DataFrame(X_scaled, columns=[f'{col}_scaled' for col in cols_to_transform])
-    df_scaled['visitor_id'] = df_kpi['visitor_id'].values
-
-    # Step 3: Distribution
-    st.subheader("Step 3: Feature Distributions After Log Transformation")
-    selected_col = st.selectbox("Select a KPI to view its log distribution", options=[f'{col}_log' for col in cols_to_transform])
-    fig = plt.figure(figsize=(6, 4))
-    sns.histplot(df_kpi[selected_col], kde=True, bins=30)
-    plt.title(f"Distribution log of {selected_col.replace('_log', '')}")
-    st.pyplot(fig)
-
-    # Step 4: Clustering
-    st.subheader("Step 4: KMeans Clustering")
-    st.markdown("We use the silhouette score to define the optimal number of clusters.")
-
-    scores = []
-    K_range = range(2, 7)
-    for k in K_range:
-        model = KMeans(n_clusters=k, random_state=42, n_init='auto')
-        labels = model.fit_predict(X_scaled)
-        score = silhouette_score(X_scaled, labels)
-        scores.append(score)
-
-    best_k = K_range[np.argmax(scores)]
-    st.write(f"Best number of clusters based on silhouette score: {best_k}")
-
-    # Fit model and assign labels
-    kmeans = KMeans(n_clusters=best_k, random_state=42, n_init='auto')
-    df_scaled['cluster'] = kmeans.fit_predict(X_scaled)
-
-    # Show cluster sizes
-    st.subheader("Step 5: Cluster Sizes")
-    cluster_counts = df_scaled['cluster'].value_counts().sort_index().reset_index()
-    cluster_counts.columns = ['Cluster', 'Number of Users']
-    st.dataframe(cluster_counts)
-
-    # Optional: Plot 2D representation if desired (PCA or t-SNE could be added)
-
+    # Filter and display
+    if visitor_input:
+        filtered_df = df_navigation_users[df_navigation_users['visitor_id'].astype(str).str.contains(visitor_input)]
+        st.dataframe(filtered_df)
+    else:
+        st.dataframe(df_navigation_users.head(10))
