@@ -307,9 +307,16 @@ with tabs[3]:
 
         # Confusion matrix
         st.markdown("### 🧮 Confusion Matrix")
-        cm = confusion_matrix(y_test, y_pred, labels=[0, 1])
-        cm_df = pd.DataFrame(cm, columns=["Predicted 0", "Predicted 1"], index=["Actual 0", "Actual 1"])
+        labels_present = sorted(list(set(y_test) | set(y_pred)))
+        cm = confusion_matrix(y_test, y_pred, labels=labels_present)
+        
+        # Generate dynamic labels
+        col_labels = [f"Predicted {lbl}" for lbl in labels_present]
+        row_labels = [f"Actual {lbl}" for lbl in labels_present]
+        
+        cm_df = pd.DataFrame(cm, columns=col_labels, index=row_labels)
         st.dataframe(cm_df)
+
 
         # Classification report
         st.markdown("### 📋 Classification Report")
