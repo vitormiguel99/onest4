@@ -243,6 +243,8 @@ with tabs[3]:
     st.header("📊 Classification")
     st.info("This section will display classification models and performance metrics.")
 
+    actions_avec_score_df = actions_avec_score_df.copy()
+
     median_threshold = actions_avec_score_df['score_engagement'].median()
     actions_avec_score_df['engaged'] = (actions_avec_score_df['score_engagement'] > median_threshold).astype(int)
 
@@ -258,7 +260,7 @@ with tabs[3]:
         poids_moyen_actions=('action_group_weight', 'mean'),
         nb_groupes_uniques=('action_group', pd.Series.nunique),
         nb_labels_uniques=('action_label', pd.Series.nunique),
-        nb_actions_par_jour=('action_id', lambda x: x.count() / df.loc[x.index, 'action_yyyymmdd'].nunique())
+        nb_actions_par_jour=('action_id', lambda x: x.count() / actions_avec_score_df.loc[x.index, 'action_yyyymmdd'].nunique())
     ).reset_index()
 
     user_df['engaged'] = user_df['action_user_name'].map(
@@ -267,6 +269,9 @@ with tabs[3]:
 
     st.write("✅ Aggregated KPIs by user:")
     st.dataframe(user_df.head())
+
+    # Step 2: Train/Test Split + Scaling + SMOTE
+    st.subheader("Step 2: Model Training and Evaluation")
 
     X = user_df.drop(columns=['action_user_name', 'engaged'])
     y = user_df['engaged']
@@ -301,7 +306,6 @@ with tabs[3]:
     st.write("📋 **Classification Report:**")
     report = classification_report(y_test, y_pred, digits=3, output_dict=True)
     st.dataframe(pd.DataFrame(report).transpose())
-
 
 # 🧠 Clustering
 with tabs[4]:
