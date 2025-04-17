@@ -14,9 +14,11 @@ st.title("🧠 Website Activity Analysis")
 # Load the datasets (replace with your raw GitHub URLs)
 actions_url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/cleaned_action.csv"
 clicks_url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/cleaned_click_session.csv"
+actions_avec_score_url = "https://raw.githubusercontent.com/vitormiguel99/onest4/refs/heads/main/TheDashboard/data/cleaned_action_avec_score.csv"
 
 actions_df = pd.read_csv(actions_url)
 click_sessions_df = pd.read_csv(clicks_url)
+actions_avec_score_df = pd.read_csv(actions_avec_score_url)
 
 # Cast yyyymmdd columns as timestamps (handle invalid entries gracefully)
 def safe_to_datetime(series):
@@ -240,6 +242,61 @@ with tabs[2]:
 with tabs[3]:
     st.header("📊 Classification")
     st.info("This section will display classification models and performance metrics.")
+    
+        # Assume actions_avec_score_df exists
+    actions_avec_score_df = actions_df.copy()
+
+    # Create target
+    median_threshold = actions_avec_score_df['score_engagement'].median()
+    actions_avec_score_df['engaged'] = (actions_avec_score_df['score_engagement'] > median_threshold).astype(int)
+
+    # Aggregate by user
+    user_df = actions_avec_score_df.groupby('action_user_name').agg(
+        nb_actions=('action_id', 'count'),
+        nb_sessions=('action_session_id', pd.Series.nunique),
+        nb_jours_actifs=('action_yyyymmdd', pd.Series.nunique),
+        engagement_moyen=('score_engagement', 'mean'),
+        engagement_max=('score_engagement', 'max'),
+        engagement_min=('score_engagement', 'min'),
+        part_nouvelles_visites=('action_is_new_visitor', 'mean'),
+        part_visites_recurrentes=('action_is_repeat_visitor', 'mean'),
+        poids_moyen_actions=('action_group_weight', 'mean'),
+        nb_groupes_uniques=('action_group', pd.Series.nunique),
+        nb_labels_uniques=('action_label', pd.Series.nunique),
+        nb_actions_par_jour=('action_id', lambda x: x.count() / actions_avec_score_df.loc[x.index, 'action_yyyymmdd'].nunique())
+    ).reset_index()
+
+    # Add target
+    user_df['engaged'] = user_df['action_user_name'].map(
+        actions_avec_score_df.groupby('action_user_name')['engaged'].agg(lambda x: int(x.mean() > 0.5))
+    )
+
+    # Prepare data
+    X = user_df.drop(columns=['action_user_name', 'engaged'])
+    y = user_df['engaged']
+
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+    X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.25, random_state=42, stratify=y)
+
+    # SMOTE
+    over_sampler = SMOTE(random_state=42)
+    X_train_res, y_train_res = over_sampler.fit_resample(X_train, y_train)
+
+    # XGBoost
+    model = XGBClassifier(n_estimators=300, max_depth=6, use_label_encoder=False, eval_metric='logloss', random_state=42)
+    model.fit(X_train_res, y_train_res)
+
+    y_pred = model.predict(X_test)
+
+    # Results
+    st.subheader("Confusion Matrix")
+    cm = confusion_matrix(y_test, y_pred)
+    st.write(pd.DataFrame(cm, columns=['Predicted 0', 'Predicted 1'], index=['Actual 0', 'Actual 1']))
+
+    st.subheader("Classification Report")
+    report = classification_report(y_test, y_pred, output_dict=True)
+    st.dataframe(pd.DataFrame(report).transpose().round(3))
 
 # 🧠 Clustering
 with tabs[4]:
