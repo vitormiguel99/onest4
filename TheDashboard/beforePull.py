@@ -9,6 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import silhouette_score
 from sklearn.metrics import confusion_matrix, classification_report
+from sklearn import metrics
 from imblearn.over_sampling import SMOTE
 from xgboost import XGBClassifier
 
@@ -246,86 +247,7 @@ with tabs[2]:
 with tabs[3]:
     st.header("📊 Classification")
     st.info("This section will display classification models and performance metrics.")
-    st.markdown("""
-    This section uses machine learning to predict whether a user will be highly engaged based on their behavior patterns.
-    We use XGBoost, a powerful gradient boosting algorithm, to classify users.
-    """)
-    
-    try:
-        # Copy the base DataFrame
-        actions_avec_score_df = actions_avec_score_df.copy()
-
-        # Binary target based on median engagement score
-        median_threshold = actions_avec_score_df['score_engagement'].median()
-        actions_avec_score_df['engaged'] = (actions_avec_score_df['score_engagement'] > median_threshold).astype(int)
-
-        # Aggregate features by user
-        user_df = actions_avec_score_df.groupby('action_user_name').agg(
-            nb_actions=('action_id', 'count'),
-            nb_sessions=('action_session_id', pd.Series.nunique),
-            nb_jours_actifs=('action_yyyymmdd', pd.Series.nunique),
-            engagement_moyen=('score_engagement', 'mean'),
-            engagement_max=('score_engagement', 'max'),
-            engagement_min=('score_engagement', 'min'),
-            part_nouvelles_visites=('action_is_new_visitor', 'mean'),
-            part_visites_recurrentes=('action_is_repeat_visitor', 'mean'),
-            poids_moyen_actions=('action_group_weight', 'mean'),
-            nb_groupes_uniques=('action_group', pd.Series.nunique),
-            nb_labels_uniques=('action_label', pd.Series.nunique),
-            nb_actions_par_jour=('action_id', lambda x: x.count() / actions_avec_score_df.loc[x.index, 'action_yyyymmdd'].nunique())
-        ).reset_index()
-
-        # Add the target label
-        user_df['engaged'] = user_df['action_user_name'].map(
-            actions_avec_score_df.groupby('action_user_name')['engaged'].agg(lambda x: int(x.mean() > 0.5))
-        )
-
-        # Separate features and target
-        X = user_df.drop(columns=['action_user_name', 'engaged'])
-        y = user_df['engaged']
-
-        # Feature scaling
-        scaler = StandardScaler()
-        X_scaled = scaler.fit_transform(X)
-
-        # Train/test split
-        X_train, X_test, y_train, y_test = train_test_split(
-            X_scaled, y, test_size=0.25, random_state=42, stratify=y
-        )
-
-        # Oversample with SMOTE
-        smote = SMOTE(random_state=42)
-        X_train_res, y_train_res = smote.fit_resample(X_train, y_train)
-
-        # XGBoost training
-        model = XGBClassifier(
-            n_estimators=300,
-            max_depth=6,
-            use_label_encoder=False,
-            eval_metric='logloss',
-            random_state=42
-        )
-        model.fit(X_train_res, y_train_res)
-
-        # Prediction
-        y_pred = model.predict(X_test)
-
-        # Confusion matrix
-        labels_present = sorted(list(set(y_test) | set(y_pred)))
-        cm = confusion_matrix(y_test, y_pred, labels=labels_present)
-        col_labels = [f"Predicted {lbl}" for lbl in labels_present]
-        row_labels = [f"Actual {lbl}" for lbl in labels_present]
-        cm_df = pd.DataFrame(cm, columns=col_labels, index=row_labels)
-        st.markdown("### 🧮 Confusion Matrix")
-        st.dataframe(cm_df)
-
-        # Classification report
-        st.markdown("### 📋 Classification Report")
-        report = classification_report(y_test, y_pred, digits=3, output_dict=True)
-        st.dataframe(pd.DataFrame(report).transpose())
-
-    except Exception as e:
-        st.error(f"⚠️ An error occurred while training or evaluating the model: {e}")    
+      
 
 # 🧠 Clustering
 with tabs[4]:
