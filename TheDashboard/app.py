@@ -297,6 +297,18 @@ with tabs[3]:
     
     # Prédiction
     y_pred = model.predict(X_test)
+    # Compute metrics
+    cm = confusion_matrix(y_test, y_pred)
+    report = classification_report(y_test, y_pred, digits=3)
+    
+    # Streamlit display
+    st.title("Évaluation du modèle")
+    
+    st.subheader("Matrice de confusion")
+    st.write(cm)
+    
+    st.subheader("Rapport de classification")
+    st.text(report)
 
 # 🧠 Clustering
 with tabs[4]:
