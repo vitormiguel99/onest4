@@ -302,8 +302,11 @@ try:
     y_pred = model.predict(X_test)
 
     st.write("📊 **Confusion Matrix**:")
-    cm = confusion_matrix(y_test, y_pred)
+try:
+    cm = confusion_matrix(y_test, y_pred, labels=[0, 1])
     st.dataframe(pd.DataFrame(cm, columns=["Predicted 0", "Predicted 1"], index=["Actual 0", "Actual 1"]))
+except Exception as e:
+    st.error(f"Error generating confusion matrix: {e}")
 
     st.write("📋 **Classification Report:**")
     report = classification_report(y_test, y_pred, digits=3, output_dict=True)
