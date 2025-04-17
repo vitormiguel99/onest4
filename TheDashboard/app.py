@@ -246,85 +246,72 @@ with tabs[3]:
     st.header("📊 Classification")
     st.info("This section will display classification models and performance metrics.")
 
-    try:
-        # Prepare data
-        actions_avec_score_df = actions_avec_score_df.copy()
+    # Data Preparation
+    st.subheader("Step 1: Preparing Data")
+    actions_avec_score_df = actions_avec_score_df.copy()
 
-        # Create binary target
-        median_threshold = actions_avec_score_df['score_engagement'].median()
-        actions_avec_score_df['engaged'] = (actions_avec_score_df['score_engagement'] > median_threshold).astype(int)
+    median_threshold = actions_avec_score_df['score_engagement'].median()
+    actions_avec_score_df['engaged'] = (actions_avec_score_df['score_engagement'] > median_threshold).astype(int)
 
-        # Aggregate user-level features
-        user_df = actions_avec_score_df.groupby('action_user_name').agg(
-            nb_actions=('action_id', 'count'),
-            nb_sessions=('action_session_id', pd.Series.nunique),
-            nb_jours_actifs=('action_yyyymmdd', pd.Series.nunique),
-            engagement_moyen=('score_engagement', 'mean'),
-            engagement_max=('score_engagement', 'max'),
-            engagement_min=('score_engagement', 'min'),
-            part_nouvelles_visites=('action_is_new_visitor', 'mean'),
-            part_visites_recurrentes=('action_is_repeat_visitor', 'mean'),
-            poids_moyen_actions=('action_group_weight', 'mean'),
-            nb_groupes_uniques=('action_group', pd.Series.nunique),
-            nb_labels_uniques=('action_label', pd.Series.nunique),
-            nb_actions_par_jour=('action_id', lambda x: x.count() / actions_avec_score_df.loc[x.index, 'action_yyyymmdd'].nunique())
-        ).reset_index()
+    user_df = actions_avec_score_df.groupby('action_user_name').agg(
+        nb_actions=('action_id', 'count'),
+        nb_sessions=('action_session_id', pd.Series.nunique),
+        nb_jours_actifs=('action_yyyymmdd', pd.Series.nunique),
+        engagement_moyen=('score_engagement', 'mean'),
+        engagement_max=('score_engagement', 'max'),
+        engagement_min=('score_engagement', 'min'),
+        part_nouvelles_visites=('action_is_new_visitor', 'mean'),
+        part_visites_recurrentes=('action_is_repeat_visitor', 'mean'),
+        poids_moyen_actions=('action_group_weight', 'mean'),
+        nb_groupes_uniques=('action_group', pd.Series.nunique),
+        nb_labels_uniques=('action_label', pd.Series.nunique),
+        nb_actions_par_jour=('action_id', lambda x: x.count() / actions_avec_score_df.loc[x.index, 'action_yyyymmdd'].nunique())
+    ).reset_index()
 
-        # Attach the target
-        user_df['engaged'] = user_df['action_user_name'].map(
-            actions_avec_score_df.groupby('action_user_name')['engaged'].agg(lambda x: int(x.mean() > 0.5))
-        )
+    user_df['engaged'] = user_df['action_user_name'].map(
+        actions_avec_score_df.groupby('action_user_name')['engaged'].agg(lambda x: int(x.mean() > 0.5))
+    )
 
-        # Features & target
-        X = user_df.drop(columns=['action_user_name', 'engaged'])
-        y = user_df['engaged']
+    st.write("✅ Aggregated KPIs by user:")
+    st.dataframe(user_df.head())
 
-        # Scale features
-        scaler = StandardScaler()
-        X_scaled = scaler.fit_transform(X)
+    # Step 2: Train/Test Split + Scaling + SMOTE
+    st.subheader("Step 2: Model Training and Evaluation")
 
-        # Train/test split
-        X_train, X_test, y_train, y_test = train_test_split(
-            X_scaled, y, test_size=0.25, random_state=42, stratify=y
-        )
+    X = user_df.drop(columns=['action_user_name', 'engaged'])
+    y = user_df['engaged']
 
-        # SMOTE to balance training data
-        over_sampler = SMOTE(random_state=42)
-        X_train_res, y_train_res = over_sampler.fit_resample(X_train, y_train)
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
 
-        # Train XGBoost classifier
-        model = XGBClassifier(
-            n_estimators=300,
-            max_depth=6,
-            use_label_encoder=False,
-            eval_metric='logloss',
-            random_state=42
-        )
-        model.fit(X_train_res, y_train_res)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_scaled, y, test_size=0.25, random_state=42, stratify=y
+    )
 
-        # Predict on test set
-        y_pred = model.predict(X_test)
+    over_sampler = SMOTE(random_state=42)
+    X_train_res, y_train_res = over_sampler.fit_resample(X_train, y_train)
 
-        # Confusion matrix
-        st.markdown("### 🧮 Confusion Matrix")
-        labels_present = sorted(list(set(y_test) | set(y_pred)))
-        cm = confusion_matrix(y_test, y_pred, labels=labels_present)
-        
-        # Generate dynamic labels
-        col_labels = [f"Predicted {lbl}" for lbl in labels_present]
-        row_labels = [f"Actual {lbl}" for lbl in labels_present]
-        
-        cm_df = pd.DataFrame(cm, columns=col_labels, index=row_labels)
-        st.dataframe(cm_df)
+    model = XGBClassifier(
+        n_estimators=300,
+        max_depth=6,
+        use_label_encoder=False,
+        eval_metric='logloss',
+        random_state=42
+    )
+    model.fit(X_train_res, y_train_res)
 
+    # Predictions
+    y_pred = model.predict(X_test)
 
-        # Classification report
-        st.markdown("### 📋 Classification Report")
-        report = classification_report(y_test, y_pred, digits=3, output_dict=True)
-        st.dataframe(pd.DataFrame(report).transpose())
+    # Evaluation Outputs
+    st.write("📊 **Confusion Matrix**:")
+    cm = confusion_matrix(y_test, y_pred)
+    st.dataframe(pd.DataFrame(cm, columns=["Predicted 0", "Predicted 1"], index=["Actual 0", "Actual 1"]))
 
-    except Exception as e:
-        st.error(f"⚠️ An error occurred while training or evaluating the model: {e}")
+    st.write("📋 **Classification Report:**")
+    report = classification_report(y_test, y_pred, digits=3, output_dict=True)
+    st.dataframe(pd.DataFrame(report).transpose())
+
     
 
 # 🧠 Clustering
