@@ -276,6 +276,7 @@ with tabs[3]:
     # Step 2: Train/Test Split + Scaling + SMOTE
     st.subheader("Step 2: Model Training and Evaluation")
 
+try:
     X = user_df.drop(columns=['action_user_name', 'engaged'])
     y = user_df['engaged']
 
@@ -298,10 +299,8 @@ with tabs[3]:
     )
     model.fit(X_train_res, y_train_res)
 
-    # Predictions
     y_pred = model.predict(X_test)
 
-    # Evaluation Outputs
     st.write("📊 **Confusion Matrix**:")
     cm = confusion_matrix(y_test, y_pred)
     st.dataframe(pd.DataFrame(cm, columns=["Predicted 0", "Predicted 1"], index=["Actual 0", "Actual 1"]))
@@ -309,6 +308,9 @@ with tabs[3]:
     st.write("📋 **Classification Report:**")
     report = classification_report(y_test, y_pred, digits=3, output_dict=True)
     st.dataframe(pd.DataFrame(report).transpose())
+
+except Exception as e:
+    st.error(f"⚠️ Error during model training or evaluation: {e}")
 
 # 🧠 Clustering
 with tabs[4]:
