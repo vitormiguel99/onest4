@@ -243,10 +243,10 @@ with tabs[3]:
     st.header("📊 Classification")
     st.info("This section will display classification models and performance metrics.")
 
-    median_threshold = df['score_engagement'].median()
-    df['engaged'] = (df['score_engagement'] > median_threshold).astype(int)
+    median_threshold = actions_avec_score_df['score_engagement'].median()
+    actions_avec_score_df['engaged'] = (actions_avec_score_df['score_engagement'] > median_threshold).astype(int)
 
-    user_df = df.groupby('action_user_name').agg(
+    user_df = actions_avec_score_df.groupby('action_user_name').agg(
         nb_actions=('action_id', 'count'),
         nb_sessions=('action_session_id', pd.Series.nunique),
         nb_jours_actifs=('action_yyyymmdd', pd.Series.nunique),
@@ -262,7 +262,7 @@ with tabs[3]:
     ).reset_index()
 
     user_df['engaged'] = user_df['action_user_name'].map(
-        df.groupby('action_user_name')['engaged'].agg(lambda x: int(x.mean() > 0.5))
+        actions_avec_score_df.groupby('action_user_name')['engaged'].agg(lambda x: int(x.mean() > 0.5))
     )
 
     st.write("✅ Aggregated KPIs by user:")
