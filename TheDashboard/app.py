@@ -9,6 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import silhouette_score
 from imblearn.over_sampling import SMOTE
+from xgboost import XGBClassifier
 
 st.set_page_config(page_title="Mg&DS Dashboard", layout="wide")
 st.title("🧠 Website Activity Analysis")
