@@ -243,7 +243,7 @@ with tabs[3]:
     st.header("📊 Classification")
     st.info("This section will display classification models and performance metrics.")
     
-   median_threshold = actions_avec_score_df['score_engagement'].median()
+    median_threshold = actions_avec_score_df['score_engagement'].median()
     actions_avec_score_df['engaged'] = (actions_avec_score_df['score_engagement'] > median_threshold).astype(int)
 
     user_df = actions_avec_score_df.groupby('action_user_name').agg(
