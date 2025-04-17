@@ -7,7 +7,8 @@ import seaborn as sns
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import silhouette_score, confusion_matrix, classification_report
+from sklearn.metrics import silhouette_score
+from sklearn.metrics import confusion_matrix, classification_report
 from imblearn.over_sampling import SMOTE
 from xgboost import XGBClassifier
 
@@ -250,229 +251,81 @@ with tabs[3]:
     We use XGBoost, a powerful gradient boosting algorithm, to classify users.
     """)
     
-    # Create proper interface with loading indicators
-    if 'action_user_name' not in actions_avec_score_df.columns and 'action_visitor_id' in actions_avec_score_df.columns:
-        # Use visitor_id if user_name is not available
-        actions_avec_score_df['action_user_name'] = actions_avec_score_df['action_visitor_id']
-    
-    # Add checkbox to run the classification model
-    run_classification = st.checkbox("Run classification model")
-    
-    if run_classification:
-        with st.spinner("Preparing data for classification..."):
-            # Start with a progress bar
-            progress_bar = st.progress(0)
-            progress_text = st.empty()
-            
-            # Step 1: Create target variable
-            progress_text.text("Step 1/5: Creating target variable...")
-            if 'score_engagement' not in actions_avec_score_df.columns:
-                st.error("Error: 'score_engagement' column not found in dataset. Adding a dummy score for demonstration.")
-                actions_avec_score_df['score_engagement'] = actions_df.groupby('action_visitor_id').ngroup() % 100
-            
-            median_threshold = actions_avec_score_df['score_engagement'].median()
-            actions_avec_score_df['engaged'] = (actions_avec_score_df['score_engagement'] > median_threshold).astype(int)
-            progress_bar.progress(20)
-            
-            # Step 2: Aggregate by user
-            progress_text.text("Step 2/5: Aggregating user data...")
-            
-            # Check if action_yyyymmdd is already a datetime
-            if not pd.api.types.is_datetime64_dtype(actions_avec_score_df['action_yyyymmdd']):
-                actions_avec_score_df['action_yyyymmdd'] = safe_to_datetime(actions_avec_score_df['action_yyyymmdd'])
-            
-            # Make sure necessary columns exist
-            required_cols = ['action_is_new_visitor', 'action_is_repeat_visitor', 'action_group_weight', 
-                            'action_group', 'action_name']
-            
-            for col in required_cols:
-                if col not in actions_avec_score_df.columns:
-                    if col == 'action_is_new_visitor':
-                        actions_avec_score_df[col] = np.random.randint(0, 2, size=len(actions_avec_score_df))
-                    elif col == 'action_is_repeat_visitor':
-                        actions_avec_score_df[col] = 1 - actions_avec_score_df.get('action_is_new_visitor', 
-                                                                                 np.random.randint(0, 2, size=len(actions_avec_score_df)))
-                    elif col == 'action_group_weight':
-                        actions_avec_score_df[col] = np.random.randint(1, 6, size=len(actions_avec_score_df))
-                    elif col == 'action_group':
-                        actions_avec_score_df[col] = np.random.choice(['publish', 'animate', 'participate', 'reaction', 'user'], 
-                                                                     size=len(actions_avec_score_df))
-                    elif col == 'action_name':
-                        actions_avec_score_df[col] = np.random.choice(['frontend create', 'editor publish', 'frontend modify', 'reaction'],
-                                                                     size=len(actions_avec_score_df))
-                    elif col == 'action_label':
-                        actions_avec_score_df[col] = np.random.choice(['label1', 'label2', 'label3'], 
-                                                                     size=len(actions_avec_score_df))
-            
-            # Create aggregation
-            user_df = actions_avec_score_df.groupby('action_user_name').agg(
-                nb_actions=('action_id', 'count'),
-                nb_sessions=('action_session_id', pd.Series.nunique),
-                nb_jours_actifs=('action_yyyymmdd', pd.Series.nunique),
-                engagement_moyen=('score_engagement', 'mean'),
-                engagement_max=('score_engagement', 'max'),
-                engagement_min=('score_engagement', 'min'),
-                part_nouvelles_visites=('action_is_new_visitor', 'mean'),
-                part_visites_recurrentes=('action_is_repeat_visitor', 'mean'),
-                poids_moyen_actions=('action_group_weight', 'mean'),
-                nb_groupes_uniques=('action_group', pd.Series.nunique)
-            ).reset_index()
-            
-            # Add days count safety check
-            days_by_user = actions_avec_score_df.groupby('action_user_name')['action_yyyymmdd'].nunique()
-            user_df['nb_actions_par_jour'] = user_df['nb_actions'] / user_df['nb_jours_actifs'].replace(0, 1)
-            
-            progress_bar.progress(40)
-            
-            # Step 3: Add target variable
-            progress_text.text("Step 3/5: Adding engagement target...")
-            user_engagement = actions_avec_score_df.groupby('action_user_name')['engaged'].agg(
-                lambda x: int(x.mean() > 0.5)).reset_index()
-            user_df = user_df.merge(user_engagement, on='action_user_name', how='left')
-            
-            # Fill missing values
-            user_df['engaged'] = user_df['engaged'].fillna(0).astype(int)
-            user_df = user_df.fillna(0)
-            
-            progress_bar.progress(60)
-            
-            # Step 4: Prepare data for modeling
-            progress_text.text("Step 4/5: Preparing model data...")
-            X = user_df.drop(columns=['action_user_name', 'engaged'])
-            y = user_df['engaged']
-            
-            scaler = StandardScaler()
-            X_scaled = scaler.fit_transform(X)
-            
-            X_train, X_test, y_train, y_test = train_test_split(
-                X_scaled, y, test_size=0.25, random_state=42, stratify=y
-            )
-            
-            # SMOTE to handle class imbalance
-            over_sampler = SMOTE(random_state=42)
-            X_train_res, y_train_res = over_sampler.fit_resample(X_train, y_train)
-            
-            progress_bar.progress(80)
-            
-            # Step 5: Training and evaluation
-            progress_text.text("Step 5/5: Training model and evaluating results...")
-            model = XGBClassifier(
-                n_estimators=100,  # Reduced for faster demo
-                max_depth=4,
-                use_label_encoder=False,
-                eval_metric='logloss',
-                random_state=42
-            )
-            
-            model.fit(X_train_res, y_train_res)
-            
-            # Make predictions and evaluate
-            y_pred = model.predict(X_test)
-            
-            progress_bar.progress(100)
-            progress_text.text("Classification model completed!")
-            time.sleep(0.5)
-            progress_text.empty()
-        
-        # Display results
-        st.subheader("Model Performance")
-        
-        col1, col2 = st.columns([1, 2])
-        
-        with col1:
-            st.write("#### Confusion Matrix")
-            cm = confusion_matrix(y_test, y_pred)
-            fig, ax = plt.subplots(figsize=(4, 3))
-            sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax)
-            plt.xlabel('Predicted Label')
-            plt.ylabel('True Label')
-            plt.title('Confusion Matrix')
-            st.pyplot(fig)
-            
-        with col2:
-            st.write("#### Classification Report")
-            report = classification_report(y_test, y_pred, output_dict=True)
-            report_df = pd.DataFrame(report).transpose()
-            st.dataframe(report_df.style.format("{:.3f}"))
-        
-        # Feature importance
-        st.subheader("Feature Importance")
-        feature_importance = pd.DataFrame({
-            'Feature': X.columns,
-            'Importance': model.feature_importances_
-        }).sort_values('Importance', ascending=False)
-        
-        fig_importance = px.bar(
-            feature_importance, 
-            x='Importance', 
-            y='Feature', 
-            orientation='h', 
-            title='XGBoost Feature Importance'
+    try:
+        # Copy the base DataFrame
+        actions_avec_score_df = actions_avec_score_df.copy()
+
+        # Binary target based on median engagement score
+        median_threshold = actions_avec_score_df['score_engagement'].median()
+        actions_avec_score_df['engaged'] = (actions_avec_score_df['score_engagement'] > median_threshold).astype(int)
+
+        # Aggregate features by user
+        user_df = actions_avec_score_df.groupby('action_user_name').agg(
+            nb_actions=('action_id', 'count'),
+            nb_sessions=('action_session_id', pd.Series.nunique),
+            nb_jours_actifs=('action_yyyymmdd', pd.Series.nunique),
+            engagement_moyen=('score_engagement', 'mean'),
+            engagement_max=('score_engagement', 'max'),
+            engagement_min=('score_engagement', 'min'),
+            part_nouvelles_visites=('action_is_new_visitor', 'mean'),
+            part_visites_recurrentes=('action_is_repeat_visitor', 'mean'),
+            poids_moyen_actions=('action_group_weight', 'mean'),
+            nb_groupes_uniques=('action_group', pd.Series.nunique),
+            nb_labels_uniques=('action_label', pd.Series.nunique),
+            nb_actions_par_jour=('action_id', lambda x: x.count() / actions_avec_score_df.loc[x.index, 'action_yyyymmdd'].nunique())
+        ).reset_index()
+
+        # Add the target label
+        user_df['engaged'] = user_df['action_user_name'].map(
+            actions_avec_score_df.groupby('action_user_name')['engaged'].agg(lambda x: int(x.mean() > 0.5))
         )
-        st.plotly_chart(fig_importance, use_container_width=True)
-        
-        # User engagement prediction tool
-        st.subheader("User Engagement Prediction Tool")
-        st.write("Search for a user to see their predicted engagement level:")
-        
-        search_user = st.text_input("Enter User ID/Name")
-        if search_user:
-            filtered_users = user_df[user_df['action_user_name'].astype(str).str.contains(search_user)]
-            
-            if not filtered_users.empty:
-                st.write(f"Found {len(filtered_users)} matching users")
-                for i, (_, user_row) in enumerate(filtered_users.iterrows()):
-                    user_features = user_row.drop(['action_user_name', 'engaged'])
-                    user_features_scaled = scaler.transform(user_features.values.reshape(1, -1))
-                    engagement_prob = model.predict_proba(user_features_scaled)[0][1]
-                    
-                    engagement_status = "Highly Engaged" if engagement_prob > 0.5 else "Not Highly Engaged"
-                    
-                    st.write(f"**User ID:** {user_row['action_user_name']}")
-                    st.write(f"**Engagement Status:** {engagement_status}")
-                    st.write(f"**Engagement Probability:** {engagement_prob:.2%}")
-                    
-                    # Progress bar visualization
-                    st.progress(engagement_prob)
-                    
-                    # Display key metrics
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.metric("Actions", int(user_row['nb_actions']))
-                    with col2:
-                        st.metric("Sessions", int(user_row['nb_sessions']))
-                    with col3:
-                        st.metric("Active Days", int(user_row['nb_jours_actifs']))
-                    
-                    if i < len(filtered_users) - 1:
-                        st.markdown("---")
-            else:
-                st.warning(f"No users found matching '{search_user}'")
-    else:
-        st.info("Check the box above to run the engagement classification model.")
-        
-        # Display basic stats about the dataset
-        st.subheader("Dataset Overview")
-        if 'score_engagement' in actions_avec_score_df.columns:
-            median_score = actions_avec_score_df['score_engagement'].median()
-            mean_score = actions_avec_score_df['score_engagement'].mean()
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                st.metric("Median Engagement Score", f"{median_score:.2f}")
-            with col2:
-                st.metric("Mean Engagement Score", f"{mean_score:.2f}")
-                
-            # Show engagement score distribution
-            fig = plt.figure(figsize=(10, 5))
-            sns.histplot(actions_avec_score_df['score_engagement'], kde=True)
-            plt.title("Distribution of Engagement Scores")
-            plt.xlabel("Engagement Score")
-            plt.ylabel("Frequency")
-            st.pyplot(fig)
-        else:
-            st.warning("⚠️ 'score_engagement' column not found in the dataset")
-    
+
+        # Separate features and target
+        X = user_df.drop(columns=['action_user_name', 'engaged'])
+        y = user_df['engaged']
+
+        # Feature scaling
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+
+        # Train/test split
+        X_train, X_test, y_train, y_test = train_test_split(
+            X_scaled, y, test_size=0.25, random_state=42, stratify=y
+        )
+
+        # Oversample with SMOTE
+        smote = SMOTE(random_state=42)
+        X_train_res, y_train_res = smote.fit_resample(X_train, y_train)
+
+        # XGBoost training
+        model = XGBClassifier(
+            n_estimators=300,
+            max_depth=6,
+            use_label_encoder=False,
+            eval_metric='logloss',
+            random_state=42
+        )
+        model.fit(X_train_res, y_train_res)
+
+        # Prediction
+        y_pred = model.predict(X_test)
+
+        # Confusion matrix
+        labels_present = sorted(list(set(y_test) | set(y_pred)))
+        cm = confusion_matrix(y_test, y_pred, labels=labels_present)
+        col_labels = [f"Predicted {lbl}" for lbl in labels_present]
+        row_labels = [f"Actual {lbl}" for lbl in labels_present]
+        cm_df = pd.DataFrame(cm, columns=col_labels, index=row_labels)
+        st.markdown("### 🧮 Confusion Matrix")
+        st.dataframe(cm_df)
+
+        # Classification report
+        st.markdown("### 📋 Classification Report")
+        report = classification_report(y_test, y_pred, digits=3, output_dict=True)
+        st.dataframe(pd.DataFrame(report).transpose())
+
+    except Exception as e:
+        st.error(f"⚠️ An error occurred while training or evaluating the model: {e}")    
 
 # 🧠 Clustering
 with tabs[4]:
