@@ -41,11 +41,6 @@ with tabs[0]:
     st.header("Welcome to the Mg&DS Analysis Dashboard")
     st.markdown("""
         This interactive dashboard helps you explore data regarding the activity in the Website Management & Data Science.
-        The analyses are separated between:
-        📈 Overview -> That gives you a global view about the activity, prioritizing the visualisation of KPIs and distributions
-        📊 Classification -> 
-        🧠 Clustering ->
-
         Use the tabs above to navigate through the analysis.
     """)
 
