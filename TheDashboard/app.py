@@ -7,7 +7,7 @@ import seaborn as sns
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import silhouette_score
+from sklearn.metrics import silhouette_score, confusion_matrix, classification_report
 from imblearn.over_sampling import SMOTE
 from xgboost import XGBClassifier
 
