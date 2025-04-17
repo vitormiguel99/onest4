@@ -258,7 +258,7 @@ with tabs[3]:
         poids_moyen_actions=('action_group_weight', 'mean'),
         nb_groupes_uniques=('action_group', pd.Series.nunique),
         nb_labels_uniques=('action_label', pd.Series.nunique),
-        nb_actions_par_jour=('action_id', lambda x: x.count() / actions_avec_score_df.loc[x.index, 'action_yyyymmdd'].nunique())
+        nb_actions_par_jour=('action_id', lambda x: x.count() / max(1, actions_avec_score_df.loc[x.index, 'action_yyyymmdd'].nunique()))
     ).reset_index()
 
     user_df['engaged'] = user_df['action_user_name'].map(
